@@ -431,6 +431,86 @@ out:
 }
 
 /**
+ * ptrace_remote_mmap  --  helper for PTRACE_REMOTE_MMAP
+ * 
+ * TODO
+ */
+static int ptrace_remote_mmap(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_remote_munmap  --  helper for PTRACE_REMOTE_MUNMAP
+ * 
+ * TODO
+ */
+static int ptrace_remote_munmap(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_remote_mremap  --  helper for PTRACE_REMOTE_MREMAP
+ * 
+ * TODO
+ */
+static int ptrace_remote_mremap(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_remote_mprotect  --  helper for PTRACE_REMOTE_MPROTECT
+ * 
+ * TODO
+ */
+static int ptrace_remote_mprotect(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_dup_to_remote  --  helper for PTRACE_DUP_TO_REMOTE
+ * 
+ * TODO
+ */
+static int ptrace_dup_to_remote(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_dup2_to_remote  --  helper for PTRACE_DUP2_TO_REMOTE
+ * 
+ * TODO
+ */
+static int ptrace_dup2_to_remote(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_dup_from_remote  --  helper for PTRACE_DUP_FROM_REMOTE
+ * 
+ * TODO
+ */
+static int ptrace_dup_from_remote(void)
+{
+    return -ENOSYS;
+}
+
+/**
+ * ptrace_remote_close  --  helper for PTRACE_REMOTE_CLOSE
+ * 
+ * TODO
+ */
+static int ptrace_remote_close(void)
+{
+    return -ENOSYS;
+}
+
+/**
  * ptrace_traceme  --  helper for PTRACE_TRACEME
  *
  * Performs checks and sets PT_PTRACED.
@@ -1118,6 +1198,47 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
 			arch_ptrace_attach(current);
 		goto out;
 	}
+	
+	if (request == PTRACE_REMOTE_MMAP) {
+        ret = ptrace_remote_mmap();
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MUNMAP) {
+        ret = ptrace_remote_munmap();
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MREMAP) {
+        ret = ptrace_remote_mremap();
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MPROTECT) {
+        ret = ptrace_remote_munmap();
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP_TO_REMOTE) {
+        ret = ptrace_dup_to_remote();
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP2_TO_REMOTE) {
+        ret = ptrace_dup2_to_remote();
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP_FROM_REMOTE) {
+        ret = ptrace_dup_from_remote();
+        goto out;
+    }
+
+    
+    if (request == PTRACE_REMOTE_CLOSE) {
+        ret = ptrace_remote_close();
+        goto out;
+    }
 
 	child = ptrace_get_task_struct(pid);
 	if (IS_ERR(child)) {
