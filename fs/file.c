@@ -987,6 +987,30 @@ int iterate_fd(struct files_struct *files, unsigned n,
 }
 EXPORT_SYMBOL(iterate_fd);
 
+static struct file *__remote_fget(struct task_struct *child, unsigned int fd, fmode_t mask)
+{
+    struct files_struct *files = child->files;
+    struct file *file;
+
+    rcu_read_lock();
+loop:
+    file = fcheck_files(files, fd);
+    printk(KERN_ERR "remote fget: %p, %u\n", file, fd);
+    if (file) {
+        /* File object ref couldn't be taken.
+         * dup2() atomicity guarantee is the reason
+         * we loop to catch the new file (or NULL pointer)
+         */
+        if (file->f_mode & mask)
+            file = NULL;
+        else if (!get_file_rcu(file))
+            goto loop;
+    }
+    rcu_read_unlock();
+
+    return file;
+}
+
 static int remote_get_unused_fd_flags(struct task_struct *child, unsigned flags)
 {
     return __alloc_fd(child->files, 0, rlimit(RLIMIT_NOFILE), flags);
@@ -1054,5 +1078,16 @@ out_unlock:
 
 int remote_dup_from_remote(struct task_struct *child, unsigned long data) {
     struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
-    return -ENOSYS;
+
+    int ret = -EBADF;
+    struct file *file = __remote_fget(child, input->remote_fd, 0);
+
+    if (file) {
+        ret = remote_get_unused_fd_flags(current, input->flags);
+        if (ret >= 0)
+            remote_fd_install(current, ret, file);
+        else
+            fput(file);
+    }
+    return ret;
 }
