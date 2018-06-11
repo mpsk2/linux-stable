@@ -44,6 +44,7 @@
 #include <linux/userfaultfd_k.h>
 #include <linux/moduleparam.h>
 #include <linux/pkeys.h>
+#include <linux/ptrace_remote.h>
 
 #include <asm/uaccess.h>
 #include <asm/cacheflush.h>
@@ -3554,3 +3555,7 @@ static int __meminit init_reserve_notifier(void)
 	return 0;
 }
 subsys_initcall(init_reserve_notifier);
+
+int remote_munmap(struct task_struct *child, unsigned long data) {
+	return -ENOSYS;
+}
