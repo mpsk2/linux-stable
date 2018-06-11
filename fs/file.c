@@ -994,7 +994,41 @@ int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
 
 int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
     struct ptrace_dup2_to_remote *input = (struct ptrace_dup2_to_remote *) data;
-    return -ENOSYS;
+
+	int err = -EBADF;
+	struct file *file;
+	struct files_struct *current_files = current->files;
+	struct files_struct *child_files = child->files;
+
+	if ((input->flags & ~O_CLOEXEC) != 0)
+		return -EINVAL;
+
+//	if (unlikely(oldfd == newfd))
+//		return -EINVAL;
+
+	if (input->remote_fd >= rlimit(RLIMIT_NOFILE))
+		return -EBADF;
+
+	spin_lock(&current_files->file_lock);
+	spin_lock(&child_files->file_lock);
+	err = expand_files(child_files, input->remote_fd);
+	file = fcheck(input->local_fd);
+	if (unlikely(!file))
+		goto Ebadf;
+	if (unlikely(err < 0)) {
+		if (err == -EMFILE)
+			goto Ebadf;
+		goto out_unlock;
+	}
+    spin_unlock(&current_files->file_lock);
+	return do_dup2(child_files, file, input->remote_fd, input->flags);
+
+Ebadf:
+	err = -EBADF;
+out_unlock:
+	spin_unlock(&child_files->file_lock);
+	spin_unlock(&current_files->file_lock);
+	return err;
 }
 
 int remote_dup_from_remote(struct task_struct *child, unsigned long data) {
