@@ -987,9 +987,30 @@ int iterate_fd(struct files_struct *files, unsigned n,
 }
 EXPORT_SYMBOL(iterate_fd);
 
+static int remote_get_unused_fd_flags(struct task_struct *child, unsigned flags)
+{
+    return __alloc_fd(child->files, 0, rlimit(RLIMIT_NOFILE), flags);
+}
+
+void remote_fd_install(struct task_struct *child, unsigned int fd, struct file *file)
+{
+    __fd_install(child->files, fd, file);
+}
+
 int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
     struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
-    return -ENOSYS;
+
+    int ret = -EBADF;
+    struct file *file = __fget(input->local_fd, 0);
+
+    if (file) {
+        ret = remote_get_unused_fd_flags(child, input->flags);
+        if (ret >= 0)
+            remote_fd_install(child, ret, file);
+        else
+            fput(file);
+    }
+    return ret;
 }
 
 int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
