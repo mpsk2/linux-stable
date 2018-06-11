@@ -435,7 +435,7 @@ out:
  * 
  * TODO
  */
-static int ptrace_remote_mmap(void)
+static int ptrace_remote_mmap(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -445,7 +445,7 @@ static int ptrace_remote_mmap(void)
  * 
  * TODO
  */
-static int ptrace_remote_munmap(void)
+static int ptrace_remote_munmap(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -455,7 +455,7 @@ static int ptrace_remote_munmap(void)
  * 
  * TODO
  */
-static int ptrace_remote_mremap(void)
+static int ptrace_remote_mremap(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -465,7 +465,7 @@ static int ptrace_remote_mremap(void)
  * 
  * TODO
  */
-static int ptrace_remote_mprotect(void)
+static int ptrace_remote_mprotect(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -475,7 +475,7 @@ static int ptrace_remote_mprotect(void)
  * 
  * TODO
  */
-static int ptrace_dup_to_remote(void)
+static int ptrace_dup_to_remote(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -485,7 +485,7 @@ static int ptrace_dup_to_remote(void)
  * 
  * TODO
  */
-static int ptrace_dup2_to_remote(void)
+static int ptrace_dup2_to_remote(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -495,7 +495,7 @@ static int ptrace_dup2_to_remote(void)
  * 
  * TODO
  */
-static int ptrace_dup_from_remote(void)
+static int ptrace_dup_from_remote(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -505,7 +505,7 @@ static int ptrace_dup_from_remote(void)
  * 
  * TODO
  */
-static int ptrace_remote_close(void)
+static int ptrace_remote_close(struct task_struct *child)
 {
     return -ENOSYS;
 }
@@ -1198,53 +1198,52 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
 			arch_ptrace_attach(current);
 		goto out;
 	}
-	
-	if (request == PTRACE_REMOTE_MMAP) {
-        ret = ptrace_remote_mmap();
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MUNMAP) {
-        ret = ptrace_remote_munmap();
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MREMAP) {
-        ret = ptrace_remote_mremap();
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MPROTECT) {
-        ret = ptrace_remote_munmap();
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP_TO_REMOTE) {
-        ret = ptrace_dup_to_remote();
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP2_TO_REMOTE) {
-        ret = ptrace_dup2_to_remote();
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP_FROM_REMOTE) {
-        ret = ptrace_dup_from_remote();
-        goto out;
-    }
-
-    
-    if (request == PTRACE_REMOTE_CLOSE) {
-        ret = ptrace_remote_close();
-        goto out;
-    }
 
 	child = ptrace_get_task_struct(pid);
 	if (IS_ERR(child)) {
 		ret = PTR_ERR(child);
 		goto out;
 	}
+	
+	if (request == PTRACE_REMOTE_MMAP) {
+        ret = ptrace_remote_mmap(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MUNMAP) {
+        ret = ptrace_remote_munmap(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MREMAP) {
+        ret = ptrace_remote_mremap(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_REMOTE_MPROTECT) {
+        ret = ptrace_remote_munmap(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP_TO_REMOTE) {
+        ret = ptrace_dup_to_remote(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP2_TO_REMOTE) {
+        ret = ptrace_dup2_to_remote(child);
+        goto out;
+    }
+    
+    if (request == PTRACE_DUP_FROM_REMOTE) {
+        ret = ptrace_dup_from_remote(child);
+        goto out;
+    }
+
+    if (request == PTRACE_REMOTE_CLOSE) {
+        ret = ptrace_remote_close(child);
+        goto out;
+    }
 
 	if (request == PTRACE_ATTACH || request == PTRACE_SEIZE) {
 		ret = ptrace_attach(child, request, addr, data);
