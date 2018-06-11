@@ -9,6 +9,7 @@
 
 #include <linux/capability.h>
 #include <linux/export.h>
+#include <linux/fdtable.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/mm.h>
@@ -435,8 +436,9 @@ out:
  * 
  * TODO
  */
-static int ptrace_remote_mmap(struct task_struct *child)
+static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
 {
+    struct ptrace_remote_mmap *input = (struct ptrace_remote_mmap *) data;
     return -ENOSYS;
 }
 
@@ -503,11 +505,23 @@ static int ptrace_dup_from_remote(struct task_struct *child)
 /**
  * ptrace_remote_close  --  helper for PTRACE_REMOTE_CLOSE
  * 
- * TODO
+ * closes file descriptor inside data, struct ptrace_remote_close
  */
-static int ptrace_remote_close(struct task_struct *child)
+static int ptrace_remote_close(struct task_struct *child, unsigned long data)
 {
-    return -ENOSYS;
+    struct ptrace_remote_close *input = (struct ptrace_remote_close *) data;
+    int ret = __close_fd(child->files, input->remote_fd);
+
+    /* can't restart close syscall because file table entry was cleared
+     *
+     * matched error by original close
+     */
+    if (unlikely(retval == -ERESTARTSYS ||
+                 retval == -ERESTARTNOINTR ||
+                 retval == -ERESTARTNOHAND ||
+                 retval == -ERESTART_RESTARTBLOCK))
+        retval = -EINTR;
+    return ret;
 }
 
 /**
@@ -1206,7 +1220,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
 	}
 	
 	if (request == PTRACE_REMOTE_MMAP) {
-        ret = ptrace_remote_mmap(child);
+        ret = ptrace_remote_mmap(child, data);
         goto out;
     }
     
@@ -1221,7 +1235,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     }
     
     if (request == PTRACE_REMOTE_MPROTECT) {
-        ret = ptrace_remote_munmap(child);
+        ret = ptrace_remote_mprotect(child);
         goto out;
     }
     
@@ -1241,7 +1255,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     }
 
     if (request == PTRACE_REMOTE_CLOSE) {
-        ret = ptrace_remote_close(child);
+        ret = ptrace_remote_close(child, data);
         goto out;
     }
 
