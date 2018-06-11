@@ -3556,7 +3556,8 @@ static int __meminit init_reserve_notifier(void)
 }
 subsys_initcall(init_reserve_notifier);
 
-int remote_munmap(struct task_struct *child, unsigned long data) {
+int remote_munmap(struct task_struct *child, unsigned long data)
+{
     struct ptrace_remote_munmap *input = (struct ptrace_remote_munmap*) data;
     int ret;
     struct mm_struct *mm = child->mm;

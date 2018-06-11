@@ -90,4 +90,6 @@ calc_vm_flag_bits(unsigned long flags)
 }
 
 unsigned long vm_commit_limit(void);
+
+extern int remote_mprotect(struct task_struct *, unsigned long);
 #endif /* _LINUX_MMAN_H */

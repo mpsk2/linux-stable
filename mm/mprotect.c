@@ -534,3 +534,10 @@ SYSCALL_DEFINE1(pkey_free, int, pkey)
 	 */
 	return ret;
 }
+
+int remote_mprotect(struct task_struct *child, unsigned long data)
+{
+	struct ptrace_remote_mprotect *input = (struct ptrace_remote_mprotect*) data;
+	return -ENOSYS;
+
+}

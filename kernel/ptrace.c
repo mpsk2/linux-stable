@@ -14,6 +14,7 @@
 #include <linux/errno.h>
 #include <linux/file.h>
 #include <linux/mm.h>
+#include <linux/mman.h>
 #include <linux/highmem.h>
 #include <linux/pagemap.h>
 #include <linux/ptrace.h>
@@ -468,9 +469,9 @@ static int ptrace_remote_mremap(struct task_struct *child)
  * 
  * TODO
  */
-static int ptrace_remote_mprotect(struct task_struct *child)
+static int ptrace_remote_mprotect(struct task_struct *child, unsigned long data)
 {
-    return -ENOSYS;
+    return remote_mprotect(child, data);
 }
 
 /**
@@ -1236,7 +1237,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     }
     
     if (request == PTRACE_REMOTE_MPROTECT) {
-        ret = ptrace_remote_mprotect(child);
+        ret = ptrace_remote_mprotect(child, data);
         goto out;
     }
     
