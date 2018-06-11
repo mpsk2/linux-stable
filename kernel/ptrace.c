@@ -478,8 +478,9 @@ static int ptrace_remote_mprotect(struct task_struct *child)
  * 
  * TODO
  */
-static int ptrace_dup_to_remote(struct task_struct *child)
+static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
 {
+    struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
     return -ENOSYS;
 }
 
@@ -488,8 +489,9 @@ static int ptrace_dup_to_remote(struct task_struct *child)
  * 
  * TODO
  */
-static int ptrace_dup2_to_remote(struct task_struct *child)
+static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
 {
+    struct ptrace_dup2_to_remote *input = (struct ptrace_dup2_to_remote *) data;
     return -ENOSYS;
 }
 
@@ -498,8 +500,9 @@ static int ptrace_dup2_to_remote(struct task_struct *child)
  * 
  * TODO
  */
-static int ptrace_dup_from_remote(struct task_struct *child)
+static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
 {
+    struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
     return -ENOSYS;
 }
 
@@ -1241,17 +1244,17 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     }
     
     if (request == PTRACE_DUP_TO_REMOTE) {
-        ret = ptrace_dup_to_remote(child);
+        ret = ptrace_dup_to_remote(child, data);
         goto out;
     }
     
     if (request == PTRACE_DUP2_TO_REMOTE) {
-        ret = ptrace_dup2_to_remote(child);
+        ret = ptrace_dup2_to_remote(child, data);
         goto out;
     }
     
     if (request == PTRACE_DUP_FROM_REMOTE) {
-        ret = ptrace_dup_from_remote(child);
+        ret = ptrace_dup_from_remote(child, data);
         goto out;
     }
 
