@@ -12,6 +12,7 @@
 #include <linux/fdtable.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
+#include <linux/file.h>
 #include <linux/mm.h>
 #include <linux/highmem.h>
 #include <linux/pagemap.h>
@@ -516,11 +517,11 @@ static int ptrace_remote_close(struct task_struct *child, unsigned long data)
      *
      * matched error by original close
      */
-    if (unlikely(retval == -ERESTARTSYS ||
-                 retval == -ERESTARTNOINTR ||
-                 retval == -ERESTARTNOHAND ||
-                 retval == -ERESTART_RESTARTBLOCK))
-        retval = -EINTR;
+    if (unlikely(ret == -ERESTARTSYS ||
+                 ret == -ERESTARTNOINTR ||
+                 ret == -ERESTARTNOHAND ||
+                 ret == -ERESTART_RESTARTBLOCK))
+        ret = -EINTR;
     return ret;
 }
 
