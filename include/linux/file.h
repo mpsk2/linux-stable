@@ -85,5 +85,8 @@ extern void fd_install(unsigned int fd, struct file *file);
 
 extern void flush_delayed_fput(void);
 extern void __fput_sync(struct file *);
+extern int remote_dup_to_remote(struct task_struct *, unsigned long);
+extern int remote_dup2_to_remote(struct task_struct *, unsigned long);
+extern int remote_dup_from_remote(struct task_struct *, unsigned long);
 
 #endif /* __LINUX_FILE_H */

@@ -22,6 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/rcupdate.h>
 #include <linux/workqueue.h>
+#include <linux/ptrace_remote.h>
 
 unsigned int sysctl_nr_open __read_mostly = 1024*1024;
 unsigned int sysctl_nr_open_min = BITS_PER_LONG;
@@ -985,3 +986,18 @@ int iterate_fd(struct files_struct *files, unsigned n,
 	return res;
 }
 EXPORT_SYMBOL(iterate_fd);
+
+int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
+    struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
+    return -ENOSYS;
+}
+
+int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
+    struct ptrace_dup2_to_remote *input = (struct ptrace_dup2_to_remote *) data;
+    return -ENOSYS;
+}
+
+int remote_dup_from_remote(struct task_struct *child, unsigned long data) {
+    struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
+    return -ENOSYS;
+}

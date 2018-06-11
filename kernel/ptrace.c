@@ -480,8 +480,7 @@ static int ptrace_remote_mprotect(struct task_struct *child)
  */
 static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
 {
-    struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
-    return -ENOSYS;
+    return remote_dup_to_remote(child, data);
 }
 
 /**
@@ -491,8 +490,7 @@ static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
  */
 static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
 {
-    struct ptrace_dup2_to_remote *input = (struct ptrace_dup2_to_remote *) data;
-    return -ENOSYS;
+	return remote_dup2_to_remote(child, data);
 }
 
 /**
@@ -502,8 +500,7 @@ static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
  */
 static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
 {
-    struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
-    return -ENOSYS;
+	return remote_dup_from_remote(child, data);
 }
 
 /**
