@@ -459,9 +459,9 @@ static int ptrace_remote_munmap(struct task_struct *child, unsigned long data)
  * 
  * TODO
  */
-static int ptrace_remote_mremap(struct task_struct *child)
+static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
 {
-    return -ENOSYS;
+    return remote_mremap(child, data);
 }
 
 /**
@@ -1232,7 +1232,7 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
     }
     
     if (request == PTRACE_REMOTE_MREMAP) {
-        ret = ptrace_remote_mremap(child);
+        ret = ptrace_remote_mremap(child, data);
         goto out;
     }
     

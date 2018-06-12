@@ -604,3 +604,7 @@ out:
 		mm_populate(new_addr + old_len, new_len - old_len);
 	return ret;
 }
+
+int remote_mremap(struct task_struct *child, unsigned long data) {
+	return -ENOSYS;
+}
