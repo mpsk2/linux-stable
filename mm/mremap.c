@@ -22,6 +22,7 @@
 #include <linux/mmu_notifier.h>
 #include <linux/uaccess.h>
 #include <linux/mm-arch-hooks.h>
+#include <linux/ptrace_remote.h>
 
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
@@ -605,6 +606,238 @@ out:
 	return ret;
 }
 
+
+static struct vm_area_struct *remote_vma_to_resize(struct task_struct *child, unsigned long addr,
+											unsigned long old_len, unsigned long new_len, unsigned long *p)
+{
+	struct mm_struct *mm = child->mm;
+	struct vm_area_struct *vma = find_vma(mm, addr);
+	unsigned long pgoff;
+
+	if (!vma || vma->vm_start > addr)
+		return ERR_PTR(-EFAULT);
+
+	if (is_vm_hugetlb_page(vma))
+		return ERR_PTR(-EINVAL);
+
+	/* We can't remap across vm area boundaries */
+	if (old_len > vma->vm_end - addr)
+		return ERR_PTR(-EFAULT);
+
+	if (new_len == old_len)
+		return vma;
+
+	/* Need to be careful about a growing mapping */
+	pgoff = (addr - vma->vm_start) >> PAGE_SHIFT;
+	pgoff += vma->vm_pgoff;
+	if (pgoff + (new_len >> PAGE_SHIFT) < pgoff)
+		return ERR_PTR(-EINVAL);
+
+	if (vma->vm_flags & (VM_DONTEXPAND | VM_PFNMAP))
+		return ERR_PTR(-EFAULT);
+
+	if (vma->vm_flags & VM_LOCKED) {
+		unsigned long locked, lock_limit;
+		locked = mm->locked_vm << PAGE_SHIFT;
+		lock_limit = rlimit(RLIMIT_MEMLOCK);
+		locked += new_len - old_len;
+		if (locked > lock_limit && !capable(CAP_IPC_LOCK))
+			return ERR_PTR(-EAGAIN);
+	}
+
+	if (!may_expand_vm(mm, vma->vm_flags,
+					   (new_len - old_len) >> PAGE_SHIFT))
+		return ERR_PTR(-ENOMEM);
+
+	if (vma->vm_flags & VM_ACCOUNT) {
+		unsigned long charged = (new_len - old_len) >> PAGE_SHIFT;
+		if (security_vm_enough_memory_mm(mm, charged))
+			return ERR_PTR(-ENOMEM);
+		*p = charged;
+	}
+
+	return vma;
+}
+
+
+static unsigned long remote_mremap_to(struct task_struct *child, unsigned long addr, unsigned long old_len,
+							   unsigned long new_addr, unsigned long new_len, bool *locked)
+{
+	struct mm_struct *mm = current->mm;
+	struct vm_area_struct *vma;
+	unsigned long ret = -EINVAL;
+	unsigned long charged = 0;
+	unsigned long map_flags;
+
+	if (offset_in_page(new_addr))
+		goto out;
+
+	if (new_len > TASK_SIZE || new_addr > TASK_SIZE - new_len)
+		goto out;
+
+	/* Ensure the old/new locations do not overlap */
+	if (addr + old_len > new_addr && new_addr + new_len > addr)
+		goto out;
+
+	ret = do_munmap(mm, new_addr, new_len);
+	if (ret)
+		goto out;
+
+	if (old_len >= new_len) {
+		ret = do_munmap(mm, addr+new_len, old_len - new_len);
+		if (ret && old_len != new_len)
+			goto out;
+		old_len = new_len;
+	}
+
+	vma = remote_vma_to_resize(child, addr, old_len, new_len, &charged);
+	if (IS_ERR(vma)) {
+		ret = PTR_ERR(vma);
+		goto out;
+	}
+
+	map_flags = MAP_FIXED;
+	if (vma->vm_flags & VM_MAYSHARE)
+		map_flags |= MAP_SHARED;
+
+	ret = get_unmapped_area(vma->vm_file, new_addr, new_len, vma->vm_pgoff +
+															 ((addr - vma->vm_start) >> PAGE_SHIFT),
+							map_flags);
+	if (offset_in_page(ret))
+		goto out1;
+
+	ret = move_vma(vma, addr, old_len, new_len, new_addr, locked);
+	if (!(offset_in_page(ret)))
+		goto out;
+out1:
+	vm_unacct_memory(charged);
+
+out:
+	return ret;
+}
+
 int remote_mremap(struct task_struct *child, unsigned long data) {
-	return -ENOSYS;
+	struct ptrace_remote_mremap *input = (struct ptrace_remote_mremap *) data;
+	unsigned long addr = input->old_addr;
+	unsigned long old_len = input->old_size;
+	unsigned long new_len = input->new_size;
+	unsigned long flags = input->flags;
+	unsigned long new_addr = input->new_addr;
+
+	struct mm_struct *mm = child->mm;
+	struct vm_area_struct *vma;
+	unsigned long ret = -EINVAL;
+	unsigned long charged = 0;
+	bool locked = false;
+
+	if (flags & ~(MREMAP_FIXED | MREMAP_MAYMOVE))
+		return ret;
+
+	if (flags & MREMAP_FIXED && !(flags & MREMAP_MAYMOVE))
+		return ret;
+
+	if (offset_in_page(addr))
+		return ret;
+
+	old_len = PAGE_ALIGN(old_len);
+	new_len = PAGE_ALIGN(new_len);
+
+	/*
+        * We allow a zero old-len as a special case
+        * for DOS-emu "duplicate shm area" thing. But
+        * a zero new-len is nonsensical.
+        */
+	if (!new_len)
+		return ret;
+
+	if (down_write_killable(&child->mm->mmap_sem))
+		return -EINTR;
+
+	if (flags & MREMAP_FIXED) {
+		ret = remote_mremap_to(child, addr, old_len, new_addr, new_len,
+						&locked);
+		goto out;
+	}
+
+	/*
+     * Always allow a shrinking remap: that just unmaps
+     * the unnecessary pages..
+         * do_munmap does all the needed commit accounting
+         */
+	if (old_len >= new_len) {
+		ret = do_munmap(mm, addr + new_len, old_len - new_len);
+		if (ret && old_len != new_len)
+			goto out;
+		ret = addr;
+		goto out;
+	}
+
+	/*
+         * Ok, we need to grow..
+        */
+	vma = remote_vma_to_resize(child, addr, old_len, new_len, &charged);
+	if (IS_ERR(vma)) {
+		ret = PTR_ERR(vma);
+		goto out;
+	}
+
+	/* old_len exactly to the end of the area..
+     */
+	if (old_len == vma->vm_end - addr) {
+		/* can we just expand the current mapping? */
+		if (vma_expandable(vma, new_len - old_len)) {
+			int pages = (new_len - old_len) >> PAGE_SHIFT;
+
+			if (vma_adjust(vma, vma->vm_start, addr + new_len,
+						   vma->vm_pgoff, NULL)) {
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			vm_stat_account(mm, vma->vm_flags, pages);
+			if (vma->vm_flags & VM_LOCKED) {
+				mm->locked_vm += pages;
+				locked = true;
+				new_addr = addr;
+			}
+			ret = addr;
+			goto out;
+		}
+	}
+
+	/*
+     * We weren't able to just expand or shrink the area,
+     * we need to create a new one and move it..
+     */
+	ret = -ENOMEM;
+	if (flags & MREMAP_MAYMOVE) {
+		unsigned long map_flags = 0;
+		if (vma->vm_flags & VM_MAYSHARE)
+			map_flags |= MAP_SHARED;
+
+		new_addr = get_unmapped_area(vma->vm_file, 0, new_len,
+									 vma->vm_pgoff +
+									 ((addr - vma->vm_start) >> PAGE_SHIFT),
+									 map_flags);
+		if (offset_in_page(new_addr)) {
+			ret = new_addr;
+			goto out;
+		}
+
+		ret = move_vma(vma, addr, old_len, new_len, new_addr, &locked);
+	}
+out:
+	if (offset_in_page(ret)) {
+		vm_unacct_memory(charged);
+		locked = 0;
+	}
+	up_write(&child->mm->mmap_sem);
+	if (locked && new_len > old_len)
+		mm_populate(new_addr + old_len, new_len - old_len);
+	if (!IS_ERR((void *) ret)) {
+	    input->old_addr = ret;
+	    ret = 0;
+	}
+	return ret;
+
 }
