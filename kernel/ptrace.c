@@ -440,8 +440,7 @@ out:
  */
 static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
 {
-    struct ptrace_remote_mmap *input = (struct ptrace_remote_mmap *) data;
-    return -ENOSYS;
+    return remote_mmap(child, data);
 }
 
 /**
