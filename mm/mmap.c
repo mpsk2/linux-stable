@@ -3923,6 +3923,14 @@ unsigned long remote_do_mmap(struct task_struct *child, struct file *file, unsig
 int remote_mmap(struct task_struct *child, unsigned long data)
 {
     struct ptrace_remote_mmap *input = (struct ptrace_remote_mmap *) data;
+
+    unsigned long addr = input->addr;
+    unsigned long len = input->length;
+    unsigned long prot = input->prot;
+    unsigned long flags = input->flags;
+    unsigned long fd = input->fd;
+    unsigned long pgoff = input->offset;
+    
     return -ENOSYS;
 }
 
