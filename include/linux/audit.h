@@ -360,6 +360,7 @@ extern int __audit_log_bprm_fcaps(struct linux_binprm *bprm,
 				  const struct cred *old);
 extern void __audit_log_capset(const struct cred *new, const struct cred *old);
 extern void __audit_mmap_fd(int fd, int flags);
+extern void __remote_audit_mmap_fd(struct task_struct *, int fd, int flags);
 
 static inline void audit_ipc_obj(struct kern_ipc_perm *ipcp)
 {
@@ -434,6 +435,12 @@ static inline void audit_mmap_fd(int fd, int flags)
 {
 	if (unlikely(!audit_dummy_context()))
 		__audit_mmap_fd(fd, flags);
+}
+
+static inline void remote_audit_mmap_fd(struct task_struct *child, int fd, int flags)
+{
+	if (unlikely(!audit_dummy_context()))
+		__remote_audit_mmap_fd(child, fd, flags);
 }
 
 extern int audit_n_rules;
@@ -540,6 +547,8 @@ static inline void audit_log_capset(const struct cred *new,
 				    const struct cred *old)
 { }
 static inline void audit_mmap_fd(int fd, int flags)
+{ }
+static inline void remote_audit_mmap_fd(struct task_struct *child, int fd, int flags)
 { }
 static inline void audit_ptrace(struct task_struct *t)
 { }

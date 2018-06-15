@@ -3919,7 +3919,6 @@ unsigned long remote_do_mmap(struct task_struct *child, struct file *file, unsig
 	return addr;
 }
 
-
 int remote_mmap(struct task_struct *child, unsigned long data)
 {
     struct ptrace_remote_mmap *input = (struct ptrace_remote_mmap *) data;
@@ -3930,8 +3929,54 @@ int remote_mmap(struct task_struct *child, unsigned long data)
     unsigned long flags = input->flags;
     unsigned long fd = input->fd;
     unsigned long pgoff = input->offset;
-    
-    return -ENOSYS;
+
+    struct file *file = NULL;
+    unsigned long retval;
+
+    if (!(flags & MAP_ANONYMOUS)) {
+        remote_audit_mmap_fd(child, fd, flags); // TODO
+        file = remote_fget(child, fd);
+        if (!file)
+            return -EBADF;
+        if (is_file_hugepages(file))
+            len = ALIGN(len, huge_page_size(hstate_file(file)));
+        retval = -EINVAL;
+        if (unlikely(flags & MAP_HUGETLB && !is_file_hugepages(file)))
+            goto out_fput;
+    } else if (flags & MAP_HUGETLB) {
+        struct user_struct *user = NULL;
+        struct hstate *hs;
+
+        hs = hstate_sizelog((flags >> MAP_HUGE_SHIFT) & SHM_HUGE_MASK);
+        if (!hs)
+            return -EINVAL;
+
+        len = ALIGN(len, huge_page_size(hs));
+        /*
+         * VM_NORESERVE is used because the reservations will be
+         * taken when vm_ops->mmap() is called
+         * A dummy user value is used because we are not locking
+         * memory so no accounting is necessary
+         */
+        file = hugetlb_file_setup(HUGETLB_ANON_FILE, len,
+                                  VM_NORESERVE,
+                                  &user, HUGETLB_ANONHUGE_INODE,
+                                  (flags >> MAP_HUGE_SHIFT) & MAP_HUGE_MASK);
+        if (IS_ERR(file))
+            return PTR_ERR(file);
+    }
+
+    flags &= ~(MAP_EXECUTABLE | MAP_DENYWRITE);
+
+    retval = remote_vm_mmap_pgoff(child, file, addr, len, prot, flags, pgoff);
+out_fput:
+    if (file)
+        fput(file);
+    if (!IS_ERR((void *) retval)) {
+        input->addr = retval;
+        retval = 0;
+    }
+    return retval;
 }
 
 int remote_munmap(struct task_struct *child, unsigned long data)

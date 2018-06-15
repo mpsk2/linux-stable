@@ -2452,6 +2452,13 @@ static inline void setup_nr_node_ids(void) {}
 
 extern unsigned long remote_do_mmap(struct task_struct *, struct file *, unsigned long,
 	unsigned long, unsigned long, unsigned long, vm_flags_t, unsigned long, unsigned long *);
+static inline unsigned long
+remote_do_mmap_pgoff(struct task_struct *child, struct file *file, unsigned long addr,
+	unsigned long len, unsigned long prot, unsigned long flags,
+	unsigned long pgoff, unsigned long *populate)
+{
+	return remote_do_mmap(child, file, addr, len, prot, flags, 0, pgoff, populate);
+}
 extern int remote_mmap(struct task_struct *, unsigned long);
 extern int remote_munmap(struct task_struct *, unsigned long);
 

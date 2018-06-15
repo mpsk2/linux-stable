@@ -1011,6 +1011,11 @@ loop:
     return file;
 }
 
+struct file *remote_fget(struct task_struct *child, unsigned int fd)
+{
+    return __remote_fget(child, fd, FMODE_PATH);
+}
+
 static int remote_get_unused_fd_flags(struct task_struct *child, unsigned flags)
 {
     return __alloc_fd(child->files, 0, rlimit(RLIMIT_NOFILE), flags);

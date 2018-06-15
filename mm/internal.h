@@ -480,10 +480,15 @@ static inline void try_to_unmap_flush_dirty(void)
 {
 }
 
+
 #endif /* CONFIG_ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH */
 
 extern const struct trace_print_flags pageflag_names[];
 extern const struct trace_print_flags vmaflag_names[];
 extern const struct trace_print_flags gfpflag_names[];
+
+extern unsigned long  __must_check remote_vm_mmap_pgoff(struct task_struct *, struct file *, unsigned long,
+                                                        unsigned long, unsigned long,
+                                                        unsigned long, unsigned long);
 
 #endif	/* __MM_INTERNAL_H */

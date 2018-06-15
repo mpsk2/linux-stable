@@ -311,6 +311,27 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 	return ret;
 }
 
+unsigned long remote_vm_mmap_pgoff(struct task_struct *child, struct file *file, unsigned long addr,
+							unsigned long len, unsigned long prot,
+							unsigned long flag, unsigned long pgoff)
+{
+	unsigned long ret;
+	struct mm_struct *mm = child->mm;
+	unsigned long populate;
+
+	ret = security_mmap_file(file, prot, flag);
+	if (!ret) {
+		if (down_write_killable(&mm->mmap_sem))
+			return -EINTR;
+		ret = remote_do_mmap_pgoff(child, file, addr, len, prot, flag, pgoff,
+							&populate);
+		up_write(&mm->mmap_sem);
+		if (populate)
+			mm_populate(ret, populate);
+	}
+	return ret;
+}
+
 unsigned long vm_mmap(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
 	unsigned long flag, unsigned long offset)
