@@ -995,7 +995,6 @@ static struct file *__remote_fget(struct task_struct *child, unsigned int fd, fm
     rcu_read_lock();
 loop:
     file = fcheck_files(files, fd);
-    printk(KERN_ERR "remote fget: %p, %u\n", file, fd);
     if (file) {
         /* File object ref couldn't be taken.
          * dup2() atomicity guarantee is the reason
@@ -1026,18 +1025,31 @@ void remote_fd_install(struct task_struct *child, unsigned int fd, struct file *
     __fd_install(child->files, fd, file);
 }
 
+static int remote_validate_flags(unsigned long flags) {
+    if (flags & ~O_CLOEXEC) {
+        return -EINVAL;
+    }
+    return 0;
+}
+
 int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
     struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
 
-    int ret = -EBADF;
-    struct file *file = __fget(input->local_fd, 0);
+    int ret = remote_validate_flags(input->flags);
+    struct file *file;
+    if (ret != 0) {
+        return ret;
+    }
+
+    ret = -EBADF;
+    file = __fget(input->local_fd, 0);
 
     if (file) {
         ret = remote_get_unused_fd_flags(child, input->flags);
         if (ret >= 0)
             remote_fd_install(child, ret, file);
         else
-            fput(file);
+            remote_fput(child, file);
     }
     return ret;
 }
@@ -1049,10 +1061,10 @@ int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
 	struct file *file;
 	struct files_struct *current_files = current->files;
 	struct files_struct *child_files = child->files;
-
-	if ((input->flags & ~O_CLOEXEC) != 0)
-		return -EINVAL;
-
+    int ret = remote_validate_flags(input->flags);
+    if (ret != 0) {
+        return ret;
+    }
 //	if (unlikely(oldfd == newfd))
 //		return -EINVAL;
 
@@ -1084,15 +1096,21 @@ out_unlock:
 int remote_dup_from_remote(struct task_struct *child, unsigned long data) {
     struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
 
-    int ret = -EBADF;
-    struct file *file = __remote_fget(child, input->remote_fd, 0);
+    int ret = remote_validate_flags(input->flags);
+    struct file *file;
+    if (ret != 0) {
+        return ret;
+    }
+
+    ret = -EBADF;
+    file = __remote_fget(child, input->remote_fd, 0);
 
     if (file) {
         ret = remote_get_unused_fd_flags(current, input->flags);
         if (ret >= 0)
             remote_fd_install(current, ret, file);
         else
-            fput(file);
+            remote_fput(child, file);
     }
     return ret;
 }
