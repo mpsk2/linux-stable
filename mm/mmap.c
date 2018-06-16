@@ -44,7 +44,6 @@
 #include <linux/userfaultfd_k.h>
 #include <linux/moduleparam.h>
 #include <linux/pkeys.h>
-#include <linux/ptrace_remote.h>
 
 #include <asm/uaccess.h>
 #include <asm/cacheflush.h>
@@ -3919,10 +3918,8 @@ unsigned long remote_do_mmap(struct task_struct *child, struct file *file, unsig
 	return addr;
 }
 
-int remote_mmap(struct task_struct *child, unsigned long data)
+int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
 {
-    struct ptrace_remote_mmap *input = (struct ptrace_remote_mmap *) data;
-
     unsigned long addr = input->addr;
     unsigned long len = input->length;
     unsigned long prot = input->prot;
@@ -3933,7 +3930,9 @@ int remote_mmap(struct task_struct *child, unsigned long data)
     struct file *file = NULL;
     unsigned long retval;
 
+	printk(KERN_ERR "BEFORE MAIN IF");
     if (!(flags & MAP_ANONYMOUS)) {
+		printk(KERN_ERR "MAIN IF TRUE");
         remote_audit_mmap_fd(child, fd, flags);
         file = remote_fget(child, fd);
         if (!file)
@@ -3944,6 +3943,7 @@ int remote_mmap(struct task_struct *child, unsigned long data)
         if (unlikely(flags & MAP_HUGETLB && !is_file_hugepages(file)))
             goto out_fput;
     } else if (flags & MAP_HUGETLB) {
+		printk(KERN_ERR "MAIN IF ELSE TRUE");
         struct user_struct *user = NULL;
         struct hstate *hs;
 
@@ -3965,13 +3965,13 @@ int remote_mmap(struct task_struct *child, unsigned long data)
         if (IS_ERR(file))
             return PTR_ERR(file);
     }
-
+	printk(KERN_ERR "MAIN AFTER MAIN IF");
     flags &= ~(MAP_EXECUTABLE | MAP_DENYWRITE);
 
     retval = remote_vm_mmap_pgoff(child, file, addr, len, prot, flags, pgoff);
 out_fput:
     if (file)
-        fput(file);
+		remote_fput(child, file);
     if (!IS_ERR((void *) retval)) {
         input->addr = retval;
         retval = 0;

@@ -23,6 +23,7 @@
 #include <linux/page_ext.h>
 #include <linux/err.h>
 #include <linux/page_ref.h>
+#include <linux/ptrace_remote.h>
 
 struct mempolicy;
 struct anon_vma;
@@ -2459,7 +2460,7 @@ remote_do_mmap_pgoff(struct task_struct *child, struct file *file, unsigned long
 {
 	return remote_do_mmap(child, file, addr, len, prot, flags, 0, pgoff, populate);
 }
-extern int remote_mmap(struct task_struct *, unsigned long);
+extern int remote_mmap(struct task_struct *, struct ptrace_remote_mmap *);
 extern int remote_munmap(struct task_struct *, unsigned long);
 
 #endif /* __KERNEL__ */

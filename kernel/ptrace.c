@@ -440,7 +440,15 @@ out:
  */
 static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
 {
-    return remote_mmap(child, data);
+    struct ptrace_remote_mmap input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_mmap)))
+        ret = -EFAULT;
+    else
+        ret = remote_mmap(child, &input);
+
+    return ret;
 }
 
 /**
