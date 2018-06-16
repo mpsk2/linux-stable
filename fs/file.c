@@ -1036,9 +1036,7 @@ static int remote_validate_flags(unsigned long flags) {
     return 0;
 }
 
-int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
-    struct ptrace_dup_to_remote *input = (struct ptrace_dup_to_remote *) data;
-
+int remote_dup_to_remote(struct task_struct *child, struct ptrace_dup_to_remote *input) {
     int ret = remote_validate_flags(input->flags);
     struct file *file;
     if (ret != 0) {
@@ -1058,9 +1056,7 @@ int remote_dup_to_remote(struct task_struct *child, unsigned long data) {
     return ret;
 }
 
-int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
-    struct ptrace_dup2_to_remote *input = (struct ptrace_dup2_to_remote *) data;
-
+int remote_dup2_to_remote(struct task_struct *child, struct ptrace_dup2_to_remote *input) {
 	int err = -EBADF;
 	struct file *file;
 	struct files_struct *current_files = current->files;
@@ -1069,8 +1065,6 @@ int remote_dup2_to_remote(struct task_struct *child, unsigned long data) {
     if (ret != 0) {
         return ret;
     }
-//	if (unlikely(oldfd == newfd))
-//		return -EINVAL;
 
 	if (input->remote_fd >= rlimit(RLIMIT_NOFILE))
 		return -EBADF;
@@ -1097,9 +1091,7 @@ out_unlock:
 	return err;
 }
 
-int remote_dup_from_remote(struct task_struct *child, unsigned long data) {
-    struct ptrace_dup_from_remote *input = (struct ptrace_dup_from_remote *) data;
-
+int remote_dup_from_remote(struct task_struct *child, struct ptrace_dup_from_remote *input) {
     int ret = remote_validate_flags(input->flags);
     struct file *file;
     if (ret != 0) {

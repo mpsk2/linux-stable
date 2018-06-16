@@ -512,7 +512,15 @@ static int ptrace_remote_mprotect(struct task_struct *child, unsigned long data)
  */
 static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
 {
-    return remote_dup_to_remote(child, data);
+    struct ptrace_dup_to_remote input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_dup_to_remote)))
+        ret = -EFAULT;
+    else
+        ret = remote_dup_to_remote(child, &input);
+
+    return ret;
 }
 
 /**
@@ -522,7 +530,15 @@ static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
  */
 static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
 {
-	return remote_dup2_to_remote(child, data);
+    struct ptrace_dup2_to_remote input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_dup2_to_remote)))
+        ret = -EFAULT;
+    else
+        ret = remote_dup2_to_remote(child, &input);
+
+    return ret;
 }
 
 /**
@@ -532,7 +548,15 @@ static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
  */
 static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
 {
-	return remote_dup_from_remote(child, data);
+    struct ptrace_dup_from_remote input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_dup_from_remote)))
+        ret = -EFAULT;
+    else
+        ret = remote_dup_from_remote(child, &input);
+
+    return ret;
 }
 
 /**
