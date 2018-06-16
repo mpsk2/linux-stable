@@ -3930,9 +3930,7 @@ int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
     struct file *file = NULL;
     unsigned long retval;
 
-	printk(KERN_ERR "BEFORE MAIN IF");
     if (!(flags & MAP_ANONYMOUS)) {
-		printk(KERN_ERR "MAIN IF TRUE");
         remote_audit_mmap_fd(child, fd, flags);
         file = remote_fget(child, fd);
         if (!file)
@@ -3943,7 +3941,6 @@ int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
         if (unlikely(flags & MAP_HUGETLB && !is_file_hugepages(file)))
             goto out_fput;
     } else if (flags & MAP_HUGETLB) {
-		printk(KERN_ERR "MAIN IF ELSE TRUE");
         struct user_struct *user = NULL;
         struct hstate *hs;
 
@@ -3965,7 +3962,6 @@ int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
         if (IS_ERR(file))
             return PTR_ERR(file);
     }
-	printk(KERN_ERR "MAIN AFTER MAIN IF");
     flags &= ~(MAP_EXECUTABLE | MAP_DENYWRITE);
 
     retval = remote_vm_mmap_pgoff(child, file, addr, len, prot, flags, pgoff);
