@@ -5,6 +5,7 @@
 #include <linux/percpu_counter.h>
 
 #include <linux/ptrace_remote.h>
+#include <linux/sched.h>
 #include <linux/atomic.h>
 #include <uapi/linux/mman.h>
 

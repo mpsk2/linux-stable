@@ -24,6 +24,7 @@
 #include <linux/err.h>
 #include <linux/page_ref.h>
 #include <linux/ptrace_remote.h>
+#include <linux/sched.h>
 
 struct mempolicy;
 struct anon_vma;
