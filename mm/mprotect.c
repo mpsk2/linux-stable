@@ -25,7 +25,6 @@
 #include <linux/perf_event.h>
 #include <linux/pkeys.h>
 #include <linux/ksm.h>
-#include <linux/ptrace_remote.h>
 #include <asm/uaccess.h>
 #include <asm/pgtable.h>
 #include <asm/cacheflush.h>
@@ -661,9 +660,8 @@ static int remote_do_mprotect_pkey(struct task_struct *child, unsigned long star
 	return error;
 }
 
-int remote_mprotect(struct task_struct *child, unsigned long data)
+int remote_mprotect(struct task_struct *child, struct ptrace_remote_mprotect *input)
 {
-	struct ptrace_remote_mprotect *input = (struct ptrace_remote_mprotect*) data;
 	unsigned long start = input->addr;
 	return remote_do_mprotect_pkey(child, start, input->length, input->prot, -1);
 }

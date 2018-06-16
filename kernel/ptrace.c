@@ -476,7 +476,15 @@ static int ptrace_remote_munmap(struct task_struct *child, unsigned long data)
  */
 static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
 {
-    return remote_mremap(child, data);
+    struct ptrace_remote_mremap input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_mremap)))
+        ret = -EFAULT;
+    else
+        ret = remote_mremap(child, &input);
+
+    return ret;
 }
 
 /**
@@ -486,7 +494,15 @@ static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
  */
 static int ptrace_remote_mprotect(struct task_struct *child, unsigned long data)
 {
-    return remote_mprotect(child, data);
+    struct ptrace_remote_mprotect input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_mprotect)))
+        ret = -EFAULT;
+    else
+        ret = remote_mprotect(child, &input);
+
+    return ret;
 }
 
 /**

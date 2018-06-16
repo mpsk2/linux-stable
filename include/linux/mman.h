@@ -4,6 +4,7 @@
 #include <linux/mm.h>
 #include <linux/percpu_counter.h>
 
+#include <linux/ptrace_remote.h>
 #include <linux/atomic.h>
 #include <uapi/linux/mman.h>
 
@@ -91,6 +92,6 @@ calc_vm_flag_bits(unsigned long flags)
 
 unsigned long vm_commit_limit(void);
 
-extern int remote_mremap(struct task_struct *, unsigned long);
-extern int remote_mprotect(struct task_struct *, unsigned long);
+extern int remote_mremap(struct task_struct *, struct ptrace_remote_mremap *);
+extern int remote_mprotect(struct task_struct *, struct ptrace_remote_mprotect *);
 #endif /* _LINUX_MMAN_H */

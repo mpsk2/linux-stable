@@ -22,7 +22,6 @@
 #include <linux/mmu_notifier.h>
 #include <linux/uaccess.h>
 #include <linux/mm-arch-hooks.h>
-#include <linux/ptrace_remote.h>
 
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
@@ -716,8 +715,7 @@ out:
 	return ret;
 }
 
-int remote_mremap(struct task_struct *child, unsigned long data) {
-	struct ptrace_remote_mremap *input = (struct ptrace_remote_mremap *) data;
+int remote_mremap(struct task_struct *child, struct ptrace_remote_mremap *input) {
 	unsigned long addr = input->old_addr;
 	unsigned long old_len = input->old_size;
 	unsigned long new_len = input->new_size;
