@@ -3835,7 +3835,7 @@ unsigned long remote_do_mmap(struct task_struct *child, struct file *file, unsig
 
 		switch (flags & MAP_TYPE) {
 			case MAP_SHARED:
-				if ((prot&PROT_WRITE) && !(file->f_mode&FMODE_WRITE))
+				if ((prot & PROT_WRITE) && !(file->f_mode & FMODE_WRITE))
 					return -EACCES;
 
 				/*
