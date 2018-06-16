@@ -3931,8 +3931,8 @@ int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
     unsigned long retval;
 
     if (!(flags & MAP_ANONYMOUS)) {
-        remote_audit_mmap_fd(child, fd, flags);
-        file = remote_fget(child, fd);
+        audit_mmap_fd(fd, flags);
+        file = fget(fd);
         if (!file)
             return -EBADF;
         if (is_file_hugepages(file))
