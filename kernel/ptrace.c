@@ -566,8 +566,16 @@ static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
  */
 static int ptrace_remote_close(struct task_struct *child, unsigned long data)
 {
-    struct ptrace_remote_close *input = (struct ptrace_remote_close *) data;
-    int ret = __close_fd(child->files, input->remote_fd);
+    struct ptrace_remote_close *input;
+    int ret;
+
+    if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_close)))
+    {
+        ret = -EFAULT;
+        goto out;
+    }
+
+    ret = __close_fd(child->files, input->remote_fd);
 
     /* can't restart close syscall because file table entry was cleared
      *
@@ -578,6 +586,7 @@ static int ptrace_remote_close(struct task_struct *child, unsigned long data)
                  ret == -ERESTARTNOHAND ||
                  ret == -ERESTART_RESTARTBLOCK))
         ret = -EINTR;
+out:
     return ret;
 }
 
