@@ -2461,7 +2461,7 @@ remote_do_mmap_pgoff(struct task_struct *child, struct file *file, unsigned long
 	return remote_do_mmap(child, file, addr, len, prot, flags, 0, pgoff, populate);
 }
 extern int remote_mmap(struct task_struct *, struct ptrace_remote_mmap *);
-extern int remote_munmap(struct task_struct *, unsigned long);
+extern int remote_munmap(struct task_struct *, struct ptrace_remote_munmap *);
 
 #endif /* __KERNEL__ */
 #endif /* _LINUX_MM_H */

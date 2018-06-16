@@ -458,7 +458,15 @@ static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
  */
 static int ptrace_remote_munmap(struct task_struct *child, unsigned long data)
 {
-    return remote_munmap(child, data);
+	struct ptrace_remote_munmap input;
+	int ret;
+
+	if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_munmap)))
+		ret = -EFAULT;
+	else
+		ret = remote_munmap(child, &input);
+
+	return ret;
 }
 
 /**

@@ -3979,9 +3979,8 @@ out_fput:
     return retval;
 }
 
-int remote_munmap(struct task_struct *child, unsigned long data)
+int remote_munmap(struct task_struct *child, struct ptrace_remote_munmap *input)
 {
-    struct ptrace_remote_munmap *input = (struct ptrace_remote_munmap *) data;
     int ret;
     struct mm_struct *mm = child->mm;
 
