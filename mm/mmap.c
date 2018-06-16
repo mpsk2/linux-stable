@@ -3934,7 +3934,7 @@ int remote_mmap(struct task_struct *child, unsigned long data)
     unsigned long retval;
 
     if (!(flags & MAP_ANONYMOUS)) {
-        remote_audit_mmap_fd(child, fd, flags); // TODO
+        remote_audit_mmap_fd(child, fd, flags);
         file = remote_fget(child, fd);
         if (!file)
             return -EBADF;
