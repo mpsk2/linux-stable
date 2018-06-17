@@ -448,10 +448,10 @@ static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
     else
         ret = remote_mmap(child, &input);
 
-    if (ret == 0)
-        return copy_to_user((void __user *) data, &input, sizeof (struct ptrace_remote_mmap)) ? -EFAULT : 0;
-    else
-        return ret;
+    if (!ret)
+        ret = copy_to_user((void __user *) data, &input, sizeof (struct ptrace_remote_mmap)) ? -EFAULT : 0;
+
+    return ret;
 }
 
 /**
@@ -486,6 +486,9 @@ static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
         ret = -EFAULT;
     else
         ret = remote_mremap(child, &input);
+
+    if (!ret)
+        ret = copy_to_user((void __user *) data, &input, sizeof (struct ptrace_remote_mmap)) ? -EFAULT : 0;
 
     return ret;
 }

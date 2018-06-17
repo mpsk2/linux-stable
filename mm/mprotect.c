@@ -655,7 +655,7 @@ static int remote_do_mprotect_pkey(struct task_struct *child, unsigned long star
 		}
 		prot = reqprot;
 	}
-	out:
+out:
 	up_write(&child->mm->mmap_sem);
 	return error;
 }
