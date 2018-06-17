@@ -448,7 +448,10 @@ static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
     else
         ret = remote_mmap(child, &input);
 
-    return ret;
+    if (ret == 0)
+        return copy_to_user((void __user *) data, &input, sizeof (struct ptrace_remote_mmap)) ? -EFAULT : 0;
+    else
+        return ret;
 }
 
 /**

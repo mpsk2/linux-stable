@@ -3929,7 +3929,6 @@ int remote_mmap(struct task_struct *child, struct ptrace_remote_mmap *input)
 
     struct file *file = NULL;
     unsigned long retval;
-
     if (!(flags & MAP_ANONYMOUS)) {
         audit_mmap_fd(fd, flags);
         file = fget(fd);
