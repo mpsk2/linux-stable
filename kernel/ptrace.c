@@ -1246,6 +1246,36 @@ int ptrace_request(struct task_struct *child, long request,
 		ret = seccomp_get_filter(child, addr, datavp);
 		break;
 
+	    case PTRACE_REMOTE_MMAP:
+	        ret = ptrace_remote_mmap(child, data);
+            break;
+	    case PTRACE_REMOTE_MUNMAP:
+            ret = ptrace_remote_munmap(child, data);
+            break;
+
+	    case PTRACE_REMOTE_MREMAP:
+	        ret = ptrace_remote_mremap(child, data);
+	        break;
+
+	    case PTRACE_REMOTE_MPROTECT:
+            ret = ptrace_remote_mprotect(child, data);
+            break;
+
+	    case PTRACE_DUP_TO_REMOTE:
+            ret = ptrace_dup_to_remote(child, data);
+            break;
+
+	    case PTRACE_DUP2_TO_REMOTE:
+            ret = ptrace_dup2_to_remote(child, data);
+            break;
+
+	    case PTRACE_DUP_FROM_REMOTE:
+            ret = ptrace_dup_from_remote(child, data);
+            break;
+
+	    case PTRACE_REMOTE_CLOSE:
+	        ret = ptrace_remote_close(child, data);
+            break;
 	default:
 		break;
 	}
@@ -1290,46 +1320,6 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, unsigned long, addr,
 		ret = PTR_ERR(child);
 		goto out;
 	}
-	
-	if (request == PTRACE_REMOTE_MMAP) {
-        ret = ptrace_remote_mmap(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MUNMAP) {
-        ret = ptrace_remote_munmap(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MREMAP) {
-        ret = ptrace_remote_mremap(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_REMOTE_MPROTECT) {
-        ret = ptrace_remote_mprotect(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP_TO_REMOTE) {
-        ret = ptrace_dup_to_remote(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP2_TO_REMOTE) {
-        ret = ptrace_dup2_to_remote(child, data);
-        goto out;
-    }
-    
-    if (request == PTRACE_DUP_FROM_REMOTE) {
-        ret = ptrace_dup_from_remote(child, data);
-        goto out;
-    }
-
-    if (request == PTRACE_REMOTE_CLOSE) {
-        ret = ptrace_remote_close(child, data);
-        goto out;
-    }
 
 	if (request == PTRACE_ATTACH || request == PTRACE_SEIZE) {
 		ret = ptrace_attach(child, request, addr, data);
