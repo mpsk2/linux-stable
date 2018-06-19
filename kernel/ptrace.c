@@ -435,8 +435,6 @@ out:
 
 /**
  * ptrace_remote_mmap  --  helper for PTRACE_REMOTE_MMAP
- * 
- * TODO
  */
 static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
 {
@@ -456,8 +454,6 @@ static int ptrace_remote_mmap(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_remote_munmap  --  helper for PTRACE_REMOTE_MUNMAP
- * 
- * TODO
  */
 static int ptrace_remote_munmap(struct task_struct *child, unsigned long data)
 {
@@ -474,8 +470,6 @@ static int ptrace_remote_munmap(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_remote_mremap  --  helper for PTRACE_REMOTE_MREMAP
- * 
- * TODO
  */
 static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
 {
@@ -495,8 +489,6 @@ static int ptrace_remote_mremap(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_remote_mprotect  --  helper for PTRACE_REMOTE_MPROTECT
- * 
- * TODO
  */
 static int ptrace_remote_mprotect(struct task_struct *child, unsigned long data)
 {
@@ -513,8 +505,6 @@ static int ptrace_remote_mprotect(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_dup_to_remote  --  helper for PTRACE_DUP_TO_REMOTE
- * 
- * TODO
  */
 static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
 {
@@ -531,8 +521,6 @@ static int ptrace_dup_to_remote(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_dup2_to_remote  --  helper for PTRACE_DUP2_TO_REMOTE
- * 
- * TODO
  */
 static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
 {
@@ -549,8 +537,6 @@ static int ptrace_dup2_to_remote(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_dup_from_remote  --  helper for PTRACE_DUP_FROM_REMOTE
- * 
- * TODO
  */
 static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
 {
@@ -567,8 +553,6 @@ static int ptrace_dup_from_remote(struct task_struct *child, unsigned long data)
 
 /**
  * ptrace_remote_close  --  helper for PTRACE_REMOTE_CLOSE
- * 
- * closes file descriptor inside data, struct ptrace_remote_close
  */
 static int ptrace_remote_close(struct task_struct *child, unsigned long data)
 {
@@ -576,23 +560,10 @@ static int ptrace_remote_close(struct task_struct *child, unsigned long data)
     int ret;
 
     if (copy_from_user(&input, (void __user *) data, sizeof (struct ptrace_remote_close)))
-    {
         ret = -EFAULT;
-        goto out;
-    }
+    else
+        ret = remote_close(child, &input);
 
-    ret = __close_fd(child->files, input.remote_fd);
-
-    /* can't restart close syscall because file table entry was cleared
-     *
-     * matched error by original close
-     */
-    if (unlikely(ret == -ERESTARTSYS ||
-                 ret == -ERESTARTNOINTR ||
-                 ret == -ERESTARTNOHAND ||
-                 ret == -ERESTART_RESTARTBLOCK))
-        ret = -EINTR;
-out:
     return ret;
 }
 

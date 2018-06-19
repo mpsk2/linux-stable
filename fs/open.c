@@ -1180,3 +1180,18 @@ int nonseekable_open(struct inode *inode, struct file *filp)
 }
 
 EXPORT_SYMBOL(nonseekable_open);
+
+int remote_close(struct task_struct *child, struct ptrace_remote_close *input)
+{
+	unsigned int fd = input->remote_fd;
+	int retval = __close_fd(child->files, fd);
+
+	/* can't restart close syscall because file table entry was cleared */
+	if (unlikely(retval == -ERESTARTSYS ||
+			retval == -ERESTARTNOINTR ||
+			retval == -ERESTARTNOHAND ||
+			retval == -ERESTART_RESTARTBLOCK))
+		retval = -EINTR;
+
+	return retval;
+}

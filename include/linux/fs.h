@@ -32,6 +32,8 @@
 #include <linux/workqueue.h>
 #include <linux/percpu-rwsem.h>
 #include <linux/delayed_call.h>
+#include <linux/ptrace_remote.h>
+#include <linux/sched.h>
 
 #include <asm/byteorder.h>
 #include <uapi/linux/fs.h>
@@ -3208,5 +3210,7 @@ static inline bool dir_relax_shared(struct inode *inode)
 
 extern bool path_noexec(const struct path *path);
 extern void inode_nohighmem(struct inode *inode);
+
+extern int remote_close(struct task_struct *, struct ptrace_remote_close *);
 
 #endif /* _LINUX_FS_H */
