@@ -1070,24 +1070,26 @@ int remote_dup2_to_remote(struct task_struct *child, struct ptrace_dup2_to_remot
 		return -EBADF;
 
 	spin_lock(&current_files->file_lock);
+    file = fcheck(input->local_fd);
+    spin_unlock(&current_files->file_lock);
+
+    if (unlikely(!file))
+    {
+        return -EBADF;
+    }
 	spin_lock(&child_files->file_lock);
 	err = expand_files(child_files, input->remote_fd);
-	file = fcheck(input->local_fd);
-	if (unlikely(!file))
-		goto Ebadf;
 	if (unlikely(err < 0)) {
 		if (err == -EMFILE)
 			goto Ebadf;
 		goto out_unlock;
 	}
-    spin_unlock(&current_files->file_lock);
 	return do_dup2(child_files, file, input->remote_fd, input->flags);
 
 Ebadf:
 	err = -EBADF;
 out_unlock:
 	spin_unlock(&child_files->file_lock);
-	spin_unlock(&current_files->file_lock);
 	return err;
 }
 
