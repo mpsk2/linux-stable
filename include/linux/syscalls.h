@@ -905,10 +905,10 @@ asmlinkage long sys_pkey_alloc(unsigned long flags, unsigned long init_val);
 asmlinkage long sys_pkey_free(int pkey);
 
 asmlinkage long sys_extacl_get_file(const char __user *path,
-	            const struct extacl __user *extacl,
+	            struct extacl __user *extacl,
 							size_t extacl_len);
 asmlinkage long sys_extacl_set_file(const char __user *path,
-	            const struct extacl __user *extacl,
+	            struct extacl __user *extacl,
 							size_t extacl_len);
 
 #endif
