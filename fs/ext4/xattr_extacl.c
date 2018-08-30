@@ -9,6 +9,7 @@
 
 #include <asm/current.h>
 
+#include "ext4.h"
 #include "extacl.h"
 
 #define LOOKUP_FLAGS 0
@@ -22,7 +23,13 @@ static ssize_t is_allowed(struct inode *inode)
   return 0;
 }
 
-static ssize_t vfs_get_file(struct dentry *d, char *klist, size_t size) {
+static ssize_t __get_file(struct dentry *d, char *klist, size_t size) {
+  struct inode *inode = d_inode(d);
+
+  down_read(&EXT4_I(inode)->xattr_sem);
+
+out:
+  up_read(&EXT4_I(inode)->xattr_sem);
   return -ENOSYS;
 }
 
@@ -58,7 +65,7 @@ static ssize_t _get_file(struct dentry *d,
     }
   }
 
-  error = vfs_get_file(d, klist, size);
+  error = __get_file(d, klist, size);
 
   if (error > 0) {
     if (size && copy_to_user(extacl, klist, error)) {
