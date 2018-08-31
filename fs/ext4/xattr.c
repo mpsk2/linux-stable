@@ -1285,8 +1285,14 @@ ext4_xattr_set(struct inode *inode, int name_index, const char *name,
 {
 	handle_t *handle;
 	int error, retries = 0;
-	int credits = ext4_jbd2_credits_xattr(inode);
-
+	int credits;
+	printk(KERN_ERR "przed\n");
+	printk(KERN_ERR "%p\n", inode);
+	printk(KERN_ERR "%p\n", inode->i_sb);
+	printk(KERN_ERR "%d\n", EXT4_SINGLEDATA_TRANS_BLOCKS(inode->i_sb));
+	printk(KERN_ERR "%d\n", EXT4_MAXQUOTAS_TRANS_BLOCKS(inode->i_sb));
+	credits = ext4_jbd2_credits_xattr(inode);
+	printk(KERN_ERR "po\n");
 retry:
 	handle = ext4_journal_start(inode, EXT4_HT_XATTR, credits);
 	if (IS_ERR(handle)) {
@@ -1804,4 +1810,3 @@ void ext4_xattr_destroy_cache(struct mb_cache *cache)
 	if (cache)
 		mb_cache_destroy(cache);
 }
-

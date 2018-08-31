@@ -33,7 +33,7 @@
  * summaries), root which is stored in the inode, sb
  */
 
-#define EXT4_SINGLEDATA_TRANS_BLOCKS(sb)				\
+#define EXT4_SINGLEDATA_TRANS_BLOCKS(sb)          \
 	(ext4_has_feature_extents(sb) ? 20U : 8U)
 
 /* Extended attribute operations touch at most two data buffers,

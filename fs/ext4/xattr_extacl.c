@@ -6,7 +6,7 @@
 #include <linux/stat.h>
 #include <linux/syscalls.h>
 #include <linux/vmalloc.h>
-
+#include <linux/kernel.h>
 #include <asm/current.h>
 
 #include "ext4.h"
@@ -105,9 +105,46 @@ retry:
 }
 
 static ssize_t path_extacl_set_file(const char __user *pathname,
-    struct extacl_entry __user *extacl, size_t size)
+    struct extacl_entry __user *extacl, size_t extacl_len)
 {
-  return -ENOSYS;
+  unsigned int lookup_flags = LOOKUP_FLAGS;
+  extacl_t *pass;
+  struct path path;
+  struct inode *inode;
+  ssize_t error;
+  size_t i;
+
+// TODO retry?
+  error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
+
+  if (error) {
+    return error;
+  }
+
+  inode = d_inode(path.dentry);
+
+  pass = extacl_alloc(extacl_len, GFP_NOFS);
+
+  if (IS_ERR(pass)) {
+    error = (ssize_t) PTR_ERR(pass);
+    goto set_file_out;
+  }
+
+  pass->a_count = extacl_len;
+
+  for (i = 0; i < extacl_len; ++i) {
+    pass->a_entries[i] = extacl[i];
+
+  }
+
+  error = ext4_set_extacl(inode, pass);
+
+set_file_out:
+  path_put(&path);
+
+  // TODO retry?
+
+  return error;
 }
 
 SYSCALL_DEFINE3(extacl_get_file, const char __user *, pathname,
