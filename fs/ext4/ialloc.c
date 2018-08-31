@@ -27,6 +27,7 @@
 #include "ext4_jbd2.h"
 #include "xattr.h"
 #include "acl.h"
+#include "extacl.h"
 
 #include <trace/events/ext4.h>
 
@@ -1096,6 +1097,11 @@ got:
 	err = ext4_init_acl(handle, inode, dir);
 	if (err)
 		goto fail_free_drop;
+
+	err = ext4_init_extacl(handle, inode, dir);
+	if (err) {
+		goto fail_free_drop;
+	}
 
 	err = ext4_init_security(handle, inode, dir, qstr);
 	if (err)
