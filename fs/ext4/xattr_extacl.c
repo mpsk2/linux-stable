@@ -34,11 +34,11 @@ out:
 }
 
 static ssize_t _get_file(struct dentry *d,
-    struct extacl __user *extacl, size_t extacl_len)
+    struct extacl_entry __user *extacl, size_t extacl_len)
 {
   ssize_t error;
   char *klist = NULL;
-  size_t size = extacl_len * sizeof(struct extacl);
+  size_t size = extacl_len * sizeof(struct extacl_entry);
   struct inode *inode = d_inode(d);
 
   if (!S_ISREG(inode->i_mode)) {
@@ -81,7 +81,7 @@ static ssize_t _get_file(struct dentry *d,
 }
 
 static ssize_t path_extacl_get_file(const char __user *pathname,
-    struct extacl __user *extacl, size_t extacl_len)
+    struct extacl_entry __user *extacl, size_t extacl_len)
 {
   unsigned int lookup_flags = LOOKUP_FLAGS;
   struct path path;
@@ -105,19 +105,19 @@ retry:
 }
 
 static ssize_t path_extacl_set_file(const char __user *pathname,
-    struct extacl __user *extacl, size_t size)
+    struct extacl_entry __user *extacl, size_t size)
 {
   return -ENOSYS;
 }
 
 SYSCALL_DEFINE3(extacl_get_file, const char __user *, pathname,
-    struct extacl __user *, extacl, size_t, extacl_len)
+    struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
   return path_extacl_get_file(pathname, extacl, extacl_len);
 }
 
 SYSCALL_DEFINE3(extacl_set_file, const char __user *, pathname,
-    struct extacl __user *, extacl, size_t, extacl_len)
+    struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
   return path_extacl_set_file(pathname, extacl, extacl_len);
 }
