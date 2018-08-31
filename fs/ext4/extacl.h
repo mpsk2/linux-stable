@@ -11,5 +11,7 @@
 #define _EXTACL_H
 
 int ext4_init_extacl(handle_t *handle, struct inode *inode, struct inode *dir);
+extacl_t *ext4_get_extacl(struct inode *inode);
+int ext4_set_extacl(struct inode *inode, extacl_t *extacl);
 
 #endif /* _EXTACL_H */

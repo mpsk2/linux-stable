@@ -21,30 +21,11 @@ struct extacl_entry {
 };
 
 struct extacl {
-  atomic_t            a_refcount;
-  struct rcu_head     a_rcu;
-  uint32_t            a_count;
   struct extacl_entry a_entries[0];
+  uint32_t            a_count;
 };
 
 typedef struct extacl_entry extacl_entry_t;
 typedef struct extacl extacl_t;
-
-static inline extacl_t *
-extacl_dup(extacl_t *extacl)
-{
-  if (extacl) {
-    atomic_inc(&extacl->a_refcount);
-  }
-  return extacl;
-}
-
-static inline void
-extacl_release(extacl_t *extacl)
-{
-  if (extacl && atomic_dec_and_test(&extacl->a_refcount)) {
-    kfree_rcu(extacl, a_rcu);
-  }
-}
 
 #endif  /* __LINUX_EXTACL_H */
