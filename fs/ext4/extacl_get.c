@@ -27,7 +27,8 @@ extacl_get(const char __user *pathname, struct extacl_entry __user *entries,
   size_t buffer_size;
   void *buffer;
 
-  printk(KERN_ERR "extacl_get(%s, %p, %ld)", pathname, entries, count);
+  printk(KERN_ERR "extacl_get(%s, %p, %ld) for %s",
+    pathname, entries, count, XATTR_NAME_EXTACL);
 
   error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
 
