@@ -26,8 +26,12 @@ extacl_get(const char __user *pathname, struct extacl_entry __user *entries,
   struct inode *inode;
   size_t buffer_size;
   void *buffer;
+  int number;
+  extacl_xattr_entry_t *entry;
+  struct extacl_entry sub_entry;
+  int i;
 
-  printk(KERN_ERR "extacl_get(%s, %p, %ld) for %s",
+  printk(KERN_ERR "DEBUG: extacl_get(%s, %p, %ld) for %s\n",
     pathname, entries, count, XATTR_NAME_EXTACL);
 
   error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
@@ -60,6 +64,41 @@ extacl_get(const char __user *pathname, struct extacl_entry __user *entries,
       if (error) {
         goto out2;
       }
+
+      // no records
+      if ((error == 0) || (error == sizeof(extacl_xattr_header_t))) {
+        error = 0;
+        goto out2;
+      }
+
+      // there are actually records
+      if ((error - sizeof(extacl_xattr_header_t) % sizeof(extacl_xattr_entry_t))) {
+        // should not happen, but may
+        error = -ENOSYS;
+        goto out2;
+      }
+
+      number = (error - sizeof(extacl_xattr_header_t)) / sizeof(extacl_xattr_entry_t);
+      if (count < number) {
+        number = count;
+      }
+      entry = (extacl_xattr_entry_t *) (buffer + sizeof(extacl_xattr_header_t));
+      for (i = 0; i < number; ++i) {
+        sub_entry.e_type = le16_to_cpu(entry->e_type);
+        sub_entry.e__pad = le16_to_cpu(entry->e__pad);
+        sub_entry.e_uid_gid = le32_to_cpu(entry->e_uid_gid);
+        sub_entry.e_range_start = le64_to_cpu(entry->e_range_start);
+        sub_entry.e_range_len = le64_to_cpu(entry->e_range_len);
+        error = copy_to_user(entries, &sub_entry, sizeof(struct extacl_entry));
+
+        if (error) {
+          goto out2;
+        }
+
+        entry += sizeof(extacl_xattr_entry_t);
+        entries += sizeof(struct extacl_entry);
+      }
+      error = number;
     }
   }
 out2:
