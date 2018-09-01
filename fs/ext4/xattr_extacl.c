@@ -150,11 +150,66 @@ set_file_out:
 SYSCALL_DEFINE3(extacl_get_file, const char __user *, pathname,
     struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
-  return path_extacl_get_file(pathname, extacl, extacl_len);
+  return extacl_get(pathname, extacl, extacl_len);
+}
+
+static ssize_t
+sub_extacl_set2(struct dentry *d, const char *kname,
+  struct extacl_entry *extacl,
+  const size_t size, int flags)
+{
+    return -ENOSYS;
+}
+
+static ssize_t
+ext4_extacl_set2(const char __user *pathname,
+  struct extacl_entry __user *extacl,
+  size_t extacl_len)
+{
+  unsigned int lookup_flags = LOOKUP_FLAGS;
+  struct path path;
+  ssize_t error;
+  const size_t size = extacl_len * sizeof(struct extacl_entry);
+  void *kvalue = NULL;
+  const char *kname = XATTR_NAME_EXTACL;
+  const int flags = XATTR_CREATE|XATTR_REPLACE;
+
+  error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
+
+  if (error) {
+    return error;
+  }
+
+  if (extacl_len > 0) {
+    // it is actually 64k!
+    if (extacl_xattr_size(extacl_len) > XATTR_SIZE_MAX) {
+      return -E2BIG;
+    }
+    kvalue = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
+    if (!kvalue) {
+      kvalue = vmalloc(size);
+      if (!kvalue) {
+        goto path_put_l;
+        error = -ENOMEM;
+      }
+    }
+    if (copy_from_user(kvalue, extacl, size)) {
+      error = -EFAULT;
+      goto out2;
+    }
+  }
+
+  error = sub_extacl_set2(path.dentry, kname, extacl, size, flags);
+
+out2:
+  kfree(kvalue);
+path_put_l:
+  path_put(&path);
+  return -ENOSYS;
 }
 
 SYSCALL_DEFINE3(extacl_set_file, const char __user *, pathname,
     struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
-  return path_extacl_set_file(pathname, extacl, extacl_len);
+  return ext4_extacl_set2(pathname, extacl, extacl_len);
 }
