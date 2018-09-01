@@ -13,8 +13,6 @@
 #include "extacl.h"
 #include "xattr.h"
 
-#define LOOKUP_FLAGS 0
-
 ssize_t
 extacl_get(const char __user *pathname, struct extacl_entry __user *entries,
   const size_t count)

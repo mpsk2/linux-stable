@@ -130,5 +130,5 @@ path_put_l:
 SYSCALL_DEFINE3(extacl_set_file, const char __user *, pathname,
     struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
-  return ext4_extacl_set2(pathname, extacl, extacl_len);
+  return extacl_set(pathname, extacl, extacl_len);
 }
