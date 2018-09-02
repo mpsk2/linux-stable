@@ -13,14 +13,14 @@
 #include "xattr.h"
 #include "extacl.h"
 
-SYSCALL_DEFINE2(extacl_set_file, const char __user *, pathname,
-    struct extacl_entry __user *, extacl)
+SYSCALL_DEFINE3(extacl_set_file, const char __user *, pathname,
+    struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
-  return extacl_set(pathname, extacl);
+  return extacl_set(pathname, extacl, extacl_len);
 }
 
-SYSCALL_DEFINE2(extacl_get_file, const char __user *, pathname,
-    struct extacl_entry __user *, extacl)
+SYSCALL_DEFINE3(extacl_get_file, const char __user *, pathname,
+    struct extacl_entry __user *, extacl, size_t, extacl_len)
 {
-  return extacl_get(pathname, extacl);
+  return extacl_get(pathname, extacl, extacl_len);
 }

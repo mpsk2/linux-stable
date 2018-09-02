@@ -14,7 +14,7 @@
 #include "xattr.h"
 
 ssize_t
-extacl_get(const char __user *pathname, struct extacl_entry __user *entries)
+extacl_get(const char __user *pathname, struct extacl_entry __user *entries, size_t count)
 {
   unsigned int lookup_flags = LOOKUP_FLAGS;
   struct path path;

@@ -323,6 +323,8 @@ static int ext4_file_open(struct inode * inode, struct file * filp)
 	char buf[64], *cp;
 	int ret;
 
+	printk(KERN_ERR "ext4_file_open\n");
+
 	if (unlikely(!(sbi->s_mount_flags & EXT4_MF_MNTDIR_SAMPLED) &&
 		     !(sb->s_flags & MS_RDONLY))) {
 		sbi->s_mount_flags |= EXT4_MF_MNTDIR_SAMPLED;
@@ -711,4 +713,3 @@ const struct inode_operations ext4_file_inode_operations = {
 	.set_acl	= ext4_set_acl,
 	.fiemap		= ext4_fiemap,
 };
-
