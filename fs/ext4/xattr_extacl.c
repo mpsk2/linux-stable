@@ -1,134 +1,39 @@
-#include <linux/capability.h>
-#include <linux/cred.h>
-#include <linux/namei.h>
-#include <linux/sched.h>
-#include <linux/slab.h>
-#include <linux/stat.h>
-#include <linux/syscalls.h>
-#include <linux/vmalloc.h>
-#include <linux/kernel.h>
-#include <asm/current.h>
+/*
+ * linux/fs/ext4/xattr_extacl.c
+ * Handler for storing security labels as extended attributes.
+ */
 
+#include <linux/string.h>
+#include <linux/fs.h>
+#include <linux/security.h>
+#include <linux/slab.h>
+#include <linux/syscalls.h>
+#include "ext4_jbd2.h"
 #include "ext4.h"
+#include "xattr.h"
 #include "extacl.h"
 
-#define LOOKUP_FLAGS 0
-
-static ssize_t is_allowed(struct inode *inode)
+static int
+ext4_xattr_extacl_get(const struct xattr_handler *handler,
+			struct dentry *unused, struct inode *inode,
+			const char *name, void *buffer, size_t size)
 {
-  // TODO check CAP_FOWNER
-  if ((inode->i_uid.val != get_current_user()->uid.val)) {
-    return -EACCES;
-  }
-  return 0;
+	return ext4_xattr_get(inode, EXT4_XATTR_INDEX_EXTACL,
+			      name, buffer, size);
 }
 
-static ssize_t path_extacl_set_file(const char __user *pathname,
-    struct extacl_entry __user *extacl, size_t extacl_len)
+static int
+ext4_xattr_extacl_set(const struct xattr_handler *handler,
+			struct dentry *unused, struct inode *inode,
+			const char *name, const void *value,
+			size_t size, int flags)
 {
-  unsigned int lookup_flags = LOOKUP_FLAGS;
-  extacl_t *pass;
-  struct path path;
-  struct inode *inode;
-  ssize_t error;
-  size_t i;
-
-// TODO retry?
-  error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
-
-  if (error) {
-    return error;
-  }
-
-  inode = d_inode(path.dentry);
-
-  pass = extacl_alloc(extacl_len, GFP_NOFS);
-
-  if (IS_ERR(pass)) {
-    error = (ssize_t) PTR_ERR(pass);
-    goto set_file_out;
-  }
-
-  pass->a_count = extacl_len;
-
-  for (i = 0; i < extacl_len; ++i) {
-    pass->a_entries[i] = extacl[i];
-
-  }
-
-  error = ext4_set_extacl(inode, pass);
-
-set_file_out:
-  path_put(&path);
-
-  // TODO retry?
-
-  return error;
+	return ext4_xattr_set(inode, EXT4_XATTR_INDEX_EXTACL,
+			      name, value, size, flags);
 }
 
-SYSCALL_DEFINE3(extacl_get_file, const char __user *, pathname,
-    struct extacl_entry __user *, extacl, size_t, extacl_len)
-{
-  return extacl_get(pathname, extacl, extacl_len);
-}
-
-static ssize_t
-sub_extacl_set2(struct dentry *d, const char *kname,
-  struct extacl_entry *extacl,
-  const size_t size, int flags)
-{
-    return -ENOSYS;
-}
-
-static ssize_t
-ext4_extacl_set2(const char __user *pathname,
-  struct extacl_entry __user *extacl,
-  size_t extacl_len)
-{
-  unsigned int lookup_flags = LOOKUP_FLAGS;
-  struct path path;
-  ssize_t error;
-  const size_t size = extacl_len * sizeof(struct extacl_entry);
-  void *kvalue = NULL;
-  const char *kname = XATTR_NAME_EXTACL;
-  const int flags = XATTR_CREATE|XATTR_REPLACE;
-
-  error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
-
-  if (error) {
-    return error;
-  }
-
-  if (extacl_len > 0) {
-    // it is actually 64k!
-    if (extacl_xattr_size(extacl_len) > XATTR_SIZE_MAX) {
-      return -E2BIG;
-    }
-    kvalue = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
-    if (!kvalue) {
-      kvalue = vmalloc(size);
-      if (!kvalue) {
-        goto path_put_l;
-        error = -ENOMEM;
-      }
-    }
-    if (copy_from_user(kvalue, extacl, size)) {
-      error = -EFAULT;
-      goto out2;
-    }
-  }
-
-  error = sub_extacl_set2(path.dentry, kname, extacl, size, flags);
-
-out2:
-  kfree(kvalue);
-path_put_l:
-  path_put(&path);
-  return -ENOSYS;
-}
-
-SYSCALL_DEFINE3(extacl_set_file, const char __user *, pathname,
-    struct extacl_entry __user *, extacl, size_t, extacl_len)
-{
-  return extacl_set(pathname, extacl, extacl_len);
-}
+const struct xattr_handler ext4_xattr_extacl_handler = {
+	.prefix	= XATTR_PREFIX_EXTACL,
+	.get	= ext4_xattr_extacl_get,
+	.set	= ext4_xattr_extacl_set,
+};

@@ -54,15 +54,18 @@ xattr_resolve_name(struct inode *inode, const char **name)
 {
 	const struct xattr_handler **handlers = inode->i_sb->s_xattr;
 	const struct xattr_handler *handler;
+	printk(KERN_ERR "xattr_resolve_name\n");
 
 	if (!(inode->i_opflags & IOP_XATTR)) {
 		if (unlikely(is_bad_inode(inode)))
 			return ERR_PTR(-EIO);
+		printk(KERN_ERR "IOP_XATTR\n");
 		return ERR_PTR(-EOPNOTSUPP);
 	}
+	printk(KERN_ERR "before loop\n");
 	for_each_xattr_handler(handlers, handler) {
 		const char *n;
-
+		printk(KERN_ERR "IN loop for %s %s\n", xattr_prefix(handler), handler->prefix);
 		n = strcmp_prefix(*name, xattr_prefix(handler));
 		if (n) {
 			if (!handler->prefix ^ !*n) {
@@ -138,6 +141,7 @@ __vfs_setxattr(struct dentry *dentry, struct inode *inode, const char *name,
 	       const void *value, size_t size, int flags)
 {
 	const struct xattr_handler *handler;
+	printk(KERN_ERR "__vfs_setxattr\n");
 
 	handler = xattr_resolve_name(inode, &name);
 	if (IS_ERR(handler))
@@ -174,6 +178,7 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
 	int issec = !strncmp(name, XATTR_SECURITY_PREFIX,
 				   XATTR_SECURITY_PREFIX_LEN);
 
+	printk(KERN_ERR "__vfs_setxattr_noperm\n");
 	if (issec)
 		inode->i_flags &= ~S_NOSEC;
 	if (inode->i_opflags & IOP_XATTR) {
@@ -210,6 +215,8 @@ vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
 {
 	struct inode *inode = dentry->d_inode;
 	int error;
+
+	printk(KERN_ERR "vfs_setxattr\n");
 
 	error = xattr_permission(inode, name, MAY_WRITE);
 	if (error)
@@ -419,14 +426,23 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 	void *kvalue = NULL;
 	char kname[XATTR_NAME_MAX + 1];
 
+	printk(KERN_ERR "setxattr\n");
 	if (flags & ~(XATTR_CREATE|XATTR_REPLACE))
 		return -EINVAL;
 
+	printk(KERN_ERR "strncpy_from_user name %s %ld\n", name, sizeof(kname));
 	error = strncpy_from_user(kname, name, sizeof(kname));
 	if (error == 0 || error == sizeof(kname))
 		error = -ERANGE;
-	if (error < 0)
-		return error;
+	if (error < 0) {
+		// TODO better check and pass
+		printk(KERN_ERR "strncpy name %s %ld\n", name, sizeof(kname));
+		error = strncpy(kname, name, sizeof(kname));
+		if (error < 0)
+			return error;
+		if (error == 0 || error == sizeof(kname))
+			return -ERANGE;
+	}
 
 	if (size) {
 		if (size > XATTR_SIZE_MAX)
@@ -437,6 +453,7 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 			if (!kvalue)
 				return -ENOMEM;
 		}
+		printk(KERN_ERR "copy_from_user %p %p %ld\n", kvalue, value, size);
 		if (copy_from_user(kvalue, value, size)) {
 			error = -EFAULT;
 			goto out;
@@ -453,12 +470,13 @@ out:
 	return error;
 }
 
-static int path_setxattr(const char __user *pathname,
+int path_setxattr(const char __user *pathname,
 			 const char __user *name, const void __user *value,
 			 size_t size, int flags, unsigned int lookup_flags)
 {
 	struct path path;
 	int error;
+		printk(KERN_ERR "path_setxattr\n");
 retry:
 	error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
 	if (error)

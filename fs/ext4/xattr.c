@@ -91,6 +91,7 @@ static const struct xattr_handler *ext4_xattr_handler_map[] = {
 #ifdef CONFIG_EXT4_FS_SECURITY
 	[EXT4_XATTR_INDEX_SECURITY]	     = &ext4_xattr_security_handler,
 #endif
+	[EXT4_XATTR_INDEX_EXTACL]        = &ext4_xattr_extacl_handler,
 };
 
 const struct xattr_handler *ext4_xattr_handlers[] = {
@@ -103,6 +104,7 @@ const struct xattr_handler *ext4_xattr_handlers[] = {
 #ifdef CONFIG_EXT4_FS_SECURITY
 	&ext4_xattr_security_handler,
 #endif
+	&ext4_xattr_extacl_handler,
 	NULL
 };
 
@@ -1289,25 +1291,40 @@ ext4_xattr_set(struct inode *inode, int name_index, const char *name,
 	printk(KERN_ERR "przed\n");
 	printk(KERN_ERR "%p\n", inode);
 	printk(KERN_ERR "%p\n", inode->i_sb);
+	printk(KERN_ERR "%p\n", inode->i_sb->s_xattr);
 	printk(KERN_ERR "%d\n", EXT4_SINGLEDATA_TRANS_BLOCKS(inode->i_sb));
 	printk(KERN_ERR "%d\n", EXT4_MAXQUOTAS_TRANS_BLOCKS(inode->i_sb));
 	credits = ext4_jbd2_credits_xattr(inode);
 	printk(KERN_ERR "po\n");
 retry:
 	handle = ext4_journal_start(inode, EXT4_HT_XATTR, credits);
+	printk(KERN_ERR "1\n");
 	if (IS_ERR(handle)) {
+	printk(KERN_ERR "2\n");
 		error = PTR_ERR(handle);
+
+		printk(KERN_ERR "3\n");
 	} else {
 		int error2;
 
+		printk(KERN_ERR "4\n");
 		error = ext4_xattr_set_handle(handle, inode, name_index, name,
 					      value, value_len, flags);
+
+								printk(KERN_ERR "5\n");
 		error2 = ext4_journal_stop(handle);
+
+		printk(KERN_ERR "6\n");
 		if (error == -ENOSPC &&
 		    ext4_should_retry_alloc(inode->i_sb, &retries))
 			goto retry;
-		if (error == 0)
+
+		printk(KERN_ERR "error=%d, error2=%d\n", error, error2);
+		if (error == 0) {
 			error = error2;
+		}
+
+			printk(KERN_ERR "7\n");
 	}
 
 	return error;

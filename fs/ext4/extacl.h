@@ -12,11 +12,6 @@
 
 #define LOOKUP_FLAGS 0
 
-extacl_t *extacl_alloc(int count, gfp_t flags);
-int ext4_init_extacl(handle_t *handle, struct inode *inode, struct inode *dir);
-extacl_t *ext4_get_extacl(struct inode *inode);
-int ext4_set_extacl(struct inode *inode, extacl_t *extacl);
-
 // extacl_get.c
 ssize_t extacl_get(const char __user *pathname,
   struct extacl_entry __user *entries, const size_t count);
