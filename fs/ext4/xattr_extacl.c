@@ -15,3 +15,26 @@
 #include "ext4_jbd2.h"
 #include "xattr.h"
 #include "extacl.h"
+
+static int
+ext4_xattr_extacl_get(const struct xattr_handler *handler,
+		    struct dentry *unused, struct inode *inode,
+		    const char *name, void *buffer, size_t size)
+{
+  return -ENOSYS;
+}
+
+static int
+ext4_xattr_extacl_set(const struct xattr_handler *handler,
+		    struct dentry *unused, struct inode *inode,
+		    const char *name, const void *value,
+		    size_t size, int flags)
+{
+  return -ENOSYS;
+}
+
+const struct xattr_handler ext4_xattr_extacl_handler = {
+  .name = XATTR_NAME_EXTACL,
+  .get = ext4_xattr_extacl_get,
+  .set = ext4_xattr_extacl_set,
+};

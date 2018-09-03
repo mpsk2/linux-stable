@@ -25,6 +25,7 @@
 #define EXT4_XATTR_INDEX_RICHACL		8
 #define EXT4_XATTR_INDEX_ENCRYPTION		9
 #define EXT4_XATTR_INDEX_HURD			10 /* Reserved for Hurd */
+#define EXT4_XATTR_INDEX_EXTACL		11
 
 struct ext4_xattr_header {
 	__le32	h_magic;	/* magic number for identification */
@@ -99,6 +100,7 @@ struct ext4_xattr_ibody_find {
 extern const struct xattr_handler ext4_xattr_user_handler;
 extern const struct xattr_handler ext4_xattr_trusted_handler;
 extern const struct xattr_handler ext4_xattr_security_handler;
+extern const struct xattr_handler ext4_xattr_extacl_handler;
 
 #define EXT4_XATTR_NAME_ENCRYPTION_CONTEXT "c"
 

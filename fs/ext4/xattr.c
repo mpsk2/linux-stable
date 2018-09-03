@@ -91,6 +91,7 @@ static const struct xattr_handler *ext4_xattr_handler_map[] = {
 #ifdef CONFIG_EXT4_FS_SECURITY
 	[EXT4_XATTR_INDEX_SECURITY]	     = &ext4_xattr_security_handler,
 #endif
+	[EXT4_XATTR_INDEX_EXTACL]        = &ext4_xattr_extacl_handler,
 };
 
 const struct xattr_handler *ext4_xattr_handlers[] = {
@@ -103,6 +104,7 @@ const struct xattr_handler *ext4_xattr_handlers[] = {
 #ifdef CONFIG_EXT4_FS_SECURITY
 	&ext4_xattr_security_handler,
 #endif
+	&ext4_xattr_extacl_handler,
 	NULL
 };
 
@@ -1804,4 +1806,3 @@ void ext4_xattr_destroy_cache(struct mb_cache *cache)
 	if (cache)
 		mb_cache_destroy(cache);
 }
-
