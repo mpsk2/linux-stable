@@ -65,6 +65,7 @@ struct old_linux_dirent;
 struct perf_event_attr;
 struct file_handle;
 struct sigaltstack;
+struct extacl_entry;
 union bpf_attr;
 
 #include <linux/types.h>
@@ -902,5 +903,8 @@ asmlinkage long sys_pkey_mprotect(unsigned long start, size_t len,
 				  unsigned long prot, int pkey);
 asmlinkage long sys_pkey_alloc(unsigned long flags, unsigned long init_val);
 asmlinkage long sys_pkey_free(int pkey);
+asmlinkage long sys_extacl_get(const char __user *pathname, const struct extacl_entry __user *entries, size_t count);
+asmlinkage long sys_extacl_set(const char __user *pathname, const struct extacl_entry __user *entries, size_t count);
+
 
 #endif
