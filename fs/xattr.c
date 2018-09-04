@@ -427,6 +427,10 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 	if (error < 0)
 		return error;
 
+	if (strcmp(kname, XATTR_NAME_EXTACL) == 0) {
+		return -EOPNOTSUPP; // illegal form of usage
+	}
+
 	if (size) {
 		if (size > XATTR_SIZE_MAX)
 			return -E2BIG;
@@ -448,8 +452,6 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
 	error = vfs_setxattr(d, kname, kvalue, size, flags);
 out:
 	kvfree(kvalue);
-
-	return error;
 }
 
 static int path_setxattr(const char __user *pathname,
@@ -524,6 +526,11 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
 	if (error < 0)
 		return error;
 
+	if (strcmp(kname, XATTR_NAME_EXTACL) == 0) {
+			error = -EOPNOTSUPP;
+			goto out;
+	}
+
 	if (size) {
 		if (size > XATTR_SIZE_MAX)
 			size = XATTR_SIZE_MAX;
@@ -549,7 +556,7 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
 	}
 
 	kvfree(kvalue);
-
+out:
 	return error;
 }
 

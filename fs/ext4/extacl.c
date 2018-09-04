@@ -25,18 +25,77 @@
 #include <linux/extacl_xattr.h>
 #include "extacl.h"
 
+ssize_t vfs_getxattr(struct dentry *dentry, const char *name, void *value,
+  size_t size);
+
 int vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
 		size_t size, int flags);
+
+/*
+ * Extended attribute GET operations
+ */
+static ssize_t
+getxattr(struct dentry *d, struct extacl_entry __user *value,
+	 size_t size)
+{
+	ssize_t error;
+	struct extacl_entry *kvalue = NULL;
+  const char *name = XATTR_NAME_EXTACL;
+
+	if (size) {
+		if (size > XATTR_SIZE_MAX)
+			size = XATTR_SIZE_MAX;
+		kvalue = kzalloc(size, GFP_KERNEL | __GFP_NOWARN);
+		if (!kvalue) {
+			kvalue = vmalloc(size);
+			if (!kvalue)
+				return -ENOMEM;
+		}
+	}
+
+	error = vfs_getxattr(d, name, kvalue, size);
+	if (error > 0) {
+		if (size && copy_to_user(value, kvalue, error))
+			error = -EFAULT;
+	} else if (error == -ERANGE && size >= XATTR_SIZE_MAX) {
+		/* The file system tried to returned a value bigger
+		   than XATTR_SIZE_MAX bytes. Not possible. */
+		error = -E2BIG;
+	}
+
+	kvfree(kvalue);
+
+	return error;
+}
+
+static ssize_t path_getxattr(const char __user *pathname,
+  struct extacl_entry __user *value,
+	size_t size, unsigned int lookup_flags)
+{
+	struct path path;
+	ssize_t error;
+retry:
+	error = user_path_at(AT_FDCWD, pathname, lookup_flags, &path);
+	if (error)
+		return error;
+	error = getxattr(path.dentry, value, size);
+	path_put(&path);
+	if (retry_estale(error, lookup_flags)) {
+		lookup_flags |= LOOKUP_REVAL;
+		goto retry;
+	}
+	return error;
+}
 
 /*
  * Extended attribute SET operations
  */
 static long
-setxattr(struct dentry *d, const void __user *value,
+setxattr(struct dentry *d, const struct extacl_entry __user *value,
 	 size_t size, int flags)
 {
 	int error;
-	void *kvalue = NULL;
+	struct extacl_entry *kvalue = NULL;
 	const char *name = XATTR_NAME_EXTACL;
 
 	if (flags & ~(XATTR_CREATE|XATTR_REPLACE))
@@ -64,8 +123,9 @@ out:
 	return error;
 }
 
-static int path_setxattr(const char __user *pathname, const void __user *value,
-			 size_t size, int flags, unsigned int lookup_flags)
+static int path_setxattr(const char __user *pathname,
+  const struct extacl_entry __user *value,
+	size_t size, int flags, unsigned int lookup_flags)
 {
 	struct path path;
 	int error;
@@ -88,10 +148,10 @@ retry:
 
 SYSCALL_DEFINE3(extacl_get,
   const char __user *, pathname,
-  const struct extacl_entry __user *, entries,
+  struct extacl_entry __user *, entries,
   size_t, count)
 {
-  return -ENOSYS;;
+  return path_getxattr(pathname, entries, sizeof(struct extacl_entry) * count, 0);
 }
 
 SYSCALL_DEFINE3(extacl_set,
