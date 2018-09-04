@@ -31,6 +31,48 @@ ssize_t vfs_getxattr(struct dentry *dentry, const char *name, void *value,
 int vfs_setxattr(struct dentry *dentry, const char *name, const void *value,
 		size_t size, int flags);
 
+static int
+fix_back_extacl(struct extacl_entry *values, size_t size)
+{
+  int i = 0;
+  for (; i < (size / sizeof(struct extacl_entry)); i++) {
+    struct extacl_entry *value = values + i;
+    value->e_type = le16_to_cpu(value->e_type);
+    value->e__pad = le16_to_cpu(value->e__pad);
+    value->e_uid_gid = le32_to_cpu(value->e_uid_gid);
+    value->e_range_start = le64_to_cpu(value->e_range_start);
+    value->e_range_len = le64_to_cpu(value->e_range_len);
+  }
+
+  return 0;
+}
+
+static int
+fix_and_validate_extacl(struct extacl_entry *values, size_t size)
+{
+  int i = 0;
+  for (; i < (size / sizeof(struct extacl_entry)); i++) {
+    struct extacl_entry *value = values + i;
+    switch (value->e_type) {
+      case EXTACL_USER_READ:
+      case EXTACL_USER_WRITE:
+      case EXTACL_GROUP_READ:
+      case EXTACL_GROUP_WRITE:
+        break;
+      default:
+        return -EINVAL; // TODO check error code
+    }
+
+    value->e_type = cpu_to_le16(value->e_type);
+    value->e__pad = cpu_to_le16(value->e__pad);
+    value->e_uid_gid = cpu_to_le32(value->e_uid_gid);
+    value->e_range_start = cpu_to_le64(value->e_range_start);
+    value->e_range_len = cpu_to_le64(value->e_range_len);
+  }
+
+  return 0;
+}
+
 /*
  * Extended attribute GET operations
  */
@@ -54,6 +96,8 @@ getxattr(struct dentry *d, struct extacl_entry __user *value,
 	}
 
 	error = vfs_getxattr(d, name, kvalue, size);
+
+
 	if (error > 0) {
 		if (size && copy_to_user(value, kvalue, error))
 			error = -EFAULT;
@@ -62,6 +106,8 @@ getxattr(struct dentry *d, struct extacl_entry __user *value,
 		   than XATTR_SIZE_MAX bytes. Not possible. */
 		error = -E2BIG;
 	}
+
+  fix_back_extacl(kvalue, size);
 
 	kvfree(kvalue);
 
@@ -102,8 +148,10 @@ setxattr(struct dentry *d, const struct extacl_entry __user *value,
 		return -EINVAL;
 
 	if (size) {
-		if (size > XATTR_SIZE_MAX)
-			return -E2BIG;
+		if (size > XATTR_SIZE_MAX) {
+      printk(KERN_ERR "size=%ld, error=%d\n", size, -E2BIG);
+    	return -E2BIG;
+    }
 		kvalue = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
 		if (!kvalue) {
 			kvalue = vmalloc(size);
@@ -115,6 +163,11 @@ setxattr(struct dentry *d, const struct extacl_entry __user *value,
 			goto out;
 		}
 	}
+
+  error = fix_and_validate_extacl(kvalue, size);
+  if (error) {
+    goto out;
+  }
 
 	error = vfs_setxattr(d, name, kvalue, size, flags);
 out:
@@ -151,7 +204,16 @@ SYSCALL_DEFINE3(extacl_get,
   struct extacl_entry __user *, entries,
   size_t, count)
 {
-  return path_getxattr(pathname, entries, sizeof(struct extacl_entry) * count, 0);
+  ssize_t err;
+  size_t size;
+  size = sizeof(struct extacl_entry) * count;
+  printk(KERN_ERR "size=%ld, count=%ld, sizeof=%ld\n, casted count %ld\n",
+    size, count, sizeof(struct extacl_entry), (ssize_t) count);
+  err = path_getxattr(pathname, entries, size, 0);
+  if (err > 0) {
+    err /= sizeof(struct extacl_entry);
+  }
+  return err;
 }
 
 SYSCALL_DEFINE3(extacl_set,
@@ -159,5 +221,9 @@ SYSCALL_DEFINE3(extacl_set,
   const struct extacl_entry __user *, entries,
   size_t, count)
 {
-  return path_setxattr(pathname, entries, sizeof(struct extacl_entry) * count, 0, 0);
+  size_t size;
+  size = sizeof(struct extacl_entry) * count;
+  printk(KERN_ERR "size=%ld, count=%ld, sizeof=%ld\n, casted count %ld\n",
+    size, count, sizeof(struct extacl_entry), (ssize_t) count);
+  return path_setxattr(pathname, entries, size, 0, 0);
 }
