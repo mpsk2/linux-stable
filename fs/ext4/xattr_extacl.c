@@ -21,7 +21,7 @@ ext4_xattr_extacl_get(const struct xattr_handler *handler,
 		    struct dentry *unused, struct inode *inode,
 		    const char *name, void *buffer, size_t size)
 {
-  return -ENOSYS;
+  return ext4_xattr_get(inode, EXT4_XATTR_INDEX_EXTACL, name, buffer, size);
 }
 
 static int
@@ -30,7 +30,7 @@ ext4_xattr_extacl_set(const struct xattr_handler *handler,
 		    const char *name, const void *value,
 		    size_t size, int flags)
 {
-  return -ENOSYS;
+  return ext4_xattr_set(inode, EXT4_XATTR_INDEX_EXTACL, name, value, size, flags);
 }
 
 const struct xattr_handler ext4_xattr_extacl_handler = {
